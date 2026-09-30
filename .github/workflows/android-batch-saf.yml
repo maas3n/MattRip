@@ -1,0 +1,42 @@
+name: Android released APK batch source isolation
+on:
+  pull_request:
+    paths: ['scripts/android-batch-saf.py', '.github/workflows/android-batch-saf.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mixed-batch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install DVD fixture tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg dvdauthor genisoimage
+      - name: Download exact released APK
+        run: |
+          curl -fL --retry 3 https://github.com/maas3n/MattMux/releases/download/v1.4.15/MattMux-1.4.15-Android.apk -o released.apk
+          echo 'c5ba1e29127be25c6c3fbd59d4e8e71e028bb26748eb46649dcdcf4c20362031  released.apk' | sha256sum -c -
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Remux distinct ISO and folder movies through Android DocumentsUI
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          ram-size: 4096M
+          heap-size: 512M
+          script: python3 scripts/android-batch-saf.py released.apk batch-saf
+      - name: Preserve batch diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: batch-saf-diagnostics
+          path: batch-saf/diagnostics
