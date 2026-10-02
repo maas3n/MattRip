@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 env:
-  MATTMUX_CI_VERSION: '1.4.4-alpha.1'
+  MATTRIP_CI_VERSION: '1.4.4-alpha.1'
 
 jobs:
   build-linux:
@@ -54,47 +54,47 @@ jobs:
       - name: Build GUI, CLI, self-contained DEB, tarballs and standalone
         run: |
           set -euo pipefail
-          bash packaging/linux/build-linux-release.sh "$MATTMUX_CI_VERSION"
-          bash packaging/linux/build-linux-standalone.sh "$MATTMUX_CI_VERSION"
+          bash packaging/linux/build-linux-release.sh "$MATTRIP_CI_VERSION"
+          bash packaging/linux/build-linux-standalone.sh "$MATTRIP_CI_VERSION"
 
       - name: Inspect and validate Debian package
         run: |
           set -euo pipefail
-          deb="dist/linux-release/MattMux-$MATTMUX_CI_VERSION-Linux-amd64.deb"
+          deb="dist/linux-release/MattRip-$MATTRIP_CI_VERSION-Linux-amd64.deb"
           dpkg-deb --info "$deb"
           dpkg-deb -f "$deb" Depends | grep -F 'libc6 (>= 2.38)'
           dpkg-deb --contents "$deb"
           tmp="$(mktemp -d)"
           trap 'rm -rf "$tmp"' EXIT
           dpkg-deb --extract "$deb" "$tmp"
-          test -x "$tmp/usr/bin/mattmux"
-          test -x "$tmp/usr/bin/mattmux-cli"
-          test -x "$tmp/usr/lib/mattmux/app/mattmux-bin"
-          test -x "$tmp/usr/lib/mattmux/app/mattmux-cli-bin"
-          test -x "$tmp/usr/lib/mattmux/ffmpeg-bin/ffmpeg"
-          test -x "$tmp/usr/lib/mattmux/ffmpeg-bin/ffprobe"
-          test -x "$tmp/usr/lib/mattmux/mediainfo-bin/mediainfo"
+          test -x "$tmp/usr/bin/mattrip"
+          test -x "$tmp/usr/bin/mattrip-cli"
+          test -x "$tmp/usr/lib/mattrip/app/mattrip-bin"
+          test -x "$tmp/usr/lib/mattrip/app/mattrip-cli-bin"
+          test -x "$tmp/usr/lib/mattrip/ffmpeg-bin/ffmpeg"
+          test -x "$tmp/usr/lib/mattrip/ffmpeg-bin/ffprobe"
+          test -x "$tmp/usr/lib/mattrip/mediainfo-bin/mediainfo"
           test ! -e "$tmp/usr/bin/ffmpeg"
           test ! -e "$tmp/usr/bin/ffprobe"
           test ! -e "$tmp/usr/bin/mediainfo"
-          grep -F 'PATH="$FFDIR:$MIDIR:$PATH"' "$tmp/usr/bin/mattmux"
-          grep -F 'PATH="$FFDIR:$MIDIR:$PATH"' "$tmp/usr/bin/mattmux-cli"
-          ! grep -q 'command -v ffmpeg' "$tmp/usr/bin/mattmux"
-          ! grep -q 'command -v ffmpeg' "$tmp/usr/bin/mattmux-cli"
-          "$tmp/usr/lib/mattmux/ffmpeg-bin/ffmpeg" -hide_banner -demuxers 2>/dev/null | grep dvdvideo
-          "$tmp/usr/lib/mattmux/ffmpeg-bin/ffprobe" -version | head -n 1
-          "$tmp/usr/lib/mattmux/mediainfo-bin/mediainfo" --Version | head -n 4
+          grep -F 'PATH="$FFDIR:$MIDIR:$PATH"' "$tmp/usr/bin/mattrip"
+          grep -F 'PATH="$FFDIR:$MIDIR:$PATH"' "$tmp/usr/bin/mattrip-cli"
+          ! grep -q 'command -v ffmpeg' "$tmp/usr/bin/mattrip"
+          ! grep -q 'command -v ffmpeg' "$tmp/usr/bin/mattrip-cli"
+          "$tmp/usr/lib/mattrip/ffmpeg-bin/ffmpeg" -hide_banner -demuxers 2>/dev/null | grep dvdvideo
+          "$tmp/usr/lib/mattrip/ffmpeg-bin/ffprobe" -version | head -n 1
+          "$tmp/usr/lib/mattrip/mediainfo-bin/mediainfo" --Version | head -n 4
 
       - name: Exercise packaged FFmpeg and launch packaged GUI
         run: |
           set -euo pipefail
           tmp="$(mktemp -d)"
           trap 'rm -rf "$tmp"' EXIT
-          dpkg-deb --extract "dist/linux-release/MattMux-$MATTMUX_CI_VERSION-Linux-amd64.deb" "$tmp"
-          export PATH="$tmp/usr/lib/mattmux/ffmpeg-bin:$PATH"
+          dpkg-deb --extract "dist/linux-release/MattRip-$MATTRIP_CI_VERSION-Linux-amd64.deb" "$tmp"
+          export PATH="$tmp/usr/lib/mattrip/ffmpeg-bin:$PATH"
           (cd src && go test -tags cli -run TestMerger -count=1 -v)
           set +e
-          xvfb-run -a timeout 8s "$tmp/usr/lib/mattmux/app/mattmux-bin" > "$tmp/gui.log" 2>&1
+          xvfb-run -a timeout 8s "$tmp/usr/lib/mattrip/app/mattrip-bin" > "$tmp/gui.log" 2>&1
           result=$?
           set -e
           cat "$tmp/gui.log"
@@ -103,7 +103,7 @@ jobs:
       - name: Validate single-file standalone executable
         run: |
           set -euo pipefail
-          standalone="dist/linux-release/MattMux-$MATTMUX_CI_VERSION-Linux-amd64Standalone"
+          standalone="dist/linux-release/MattRip-$MATTRIP_CI_VERSION-Linux-amd64Standalone"
           test -x "$standalone"
           file "$standalone" | grep -E 'ELF 64-bit.*x86-64'
           cache="$(mktemp -d)"
@@ -111,15 +111,15 @@ jobs:
           XDG_CACHE_HOME="$cache" "$standalone" --standalone-self-test
           python3 packaging/linux/test-standalone-libs.py
           bash packaging/linux/test-standalone-clean.sh "$standalone"
-          test -x "$cache/mattmux/standalone/"*/mattmux-bin
-          test -x "$cache/mattmux/standalone/"*/ffmpeg
-          test -x "$cache/mattmux/standalone/"*/ffprobe
-          test -x "$cache/mattmux/standalone/"*/mediainfo
+          test -x "$cache/mattrip/standalone/"*/mattrip-bin
+          test -x "$cache/mattrip/standalone/"*/ffmpeg
+          test -x "$cache/mattrip/standalone/"*/ffprobe
+          test -x "$cache/mattrip/standalone/"*/mediainfo
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: MattMux-Advanced-Merger-Linux-preview
+          name: MattRip-Advanced-Merger-Linux-preview
           path: |
             dist/linux-release/*.deb
             dist/linux-release/*.tar.gz

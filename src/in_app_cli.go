@@ -18,7 +18,7 @@ func runInAppCLI(ctx context.Context, line string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	token, err := os.CreateTemp("", "mattmux-cli-cancel-*")
+	token, err := os.CreateTemp("", "mattrip-cli-cancel-*")
 	if err != nil {
 		return "", err
 	}

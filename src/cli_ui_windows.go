@@ -22,8 +22,8 @@ func createCLIWindowsControls(hwnd, hInstance uintptr) {
 		cliWindow.controls = append(cliWindow.controls, c)
 		return c
 	}
-	add("STATIC", "MattMux CLI — scan, metadata, remux, --batch. Quote paths containing spaces.", 0, 28, 60, 750, 44, 0)
-	cliWindow.command = add("EDIT", "mattmux-cli --help", WS_BORDER|ES_AUTOHSCROLL, 28, 112, 750, 32, 0)
+	add("STATIC", "MattRip CLI — scan, metadata, remux, --batch. Quote paths containing spaces.", 0, 28, 60, 750, 44, 0)
+	cliWindow.command = add("EDIT", "mattrip-cli --help", WS_BORDER|ES_AUTOHSCROLL, 28, 112, 750, 32, 0)
 	add("BUTTON", "Run", BS_PUSHBUTTON, 28, 158, 120, 32, cliFirstID)
 	add("BUTTON", "Cancel", BS_PUSHBUTTON, 158, 158, 120, 32, cliFirstID+1)
 	cliWindow.output = add("EDIT", "", WS_BORDER|ES_MULTILINE|ES_AUTOVSCROLL|ES_READONLY|WS_VSCROLL, 28, 204, 750, 360, 0)

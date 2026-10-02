@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestNoMattMuxWrittenIFOParser(t *testing.T) {
+func TestNoMattRipWrittenIFOParser(t *testing.T) {
 	banned := []string{
 		"ReadDVDChapters(",
 		"func readIFO(",
@@ -23,7 +23,7 @@ func TestNoMattMuxWrittenIFOParser(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, path := range entries {
-		if filepath.Base(path) == "no_mattmux_ifo_parser_test.go" {
+		if filepath.Base(path) == "no_mattrip_ifo_parser_test.go" {
 			continue
 		}
 		data, err := os.ReadFile(path)
@@ -33,11 +33,11 @@ func TestNoMattMuxWrittenIFOParser(t *testing.T) {
 		text := string(data)
 		for _, needle := range banned {
 			if strings.Contains(text, needle) {
-				t.Fatalf("MattMux-written IFO parser pattern %q remains in %s", needle, path)
+				t.Fatalf("MattRip-written IFO parser pattern %q remains in %s", needle, path)
 			}
 		}
 	}
 	if _, err := os.Stat("dvdchapters.go"); !os.IsNotExist(err) {
-		t.Fatalf("legacy MattMux IFO parser file dvdchapters.go must not exist")
+		t.Fatalf("legacy MattRip IFO parser file dvdchapters.go must not exist")
 	}
 }

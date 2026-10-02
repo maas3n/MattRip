@@ -175,7 +175,7 @@ func runBatchWithDeps(ctx context.Context, opts batchOptions, progress batchProg
 	}
 	logger := log.New(writer, "", log.LstdFlags)
 	result := batchResult{Total: len(movies)}
-	logger.Printf("MattMux batch start: input=%q output=%q movies=%d", opts.InputRoot, outRoot, len(movies))
+	logger.Printf("MattRip batch start: input=%q output=%q movies=%d", opts.InputRoot, outRoot, len(movies))
 
 	tools, err := deps.ensureTools(ctx, func(frac float64, status string) {
 		progress(frac*.02, status)
@@ -244,7 +244,7 @@ func runBatchWithDeps(ctx context.Context, opts batchOptions, progress batchProg
 		progress(float64(index+1)/float64(len(movies)), fmt.Sprintf("Completed %d of %d movie(s).", index+1, len(movies)))
 	}
 
-	logger.Printf("MattMux batch complete: completed=%d failed=%d total=%d", result.Completed, len(result.Failures), result.Total)
+	logger.Printf("MattRip batch complete: completed=%d failed=%d total=%d", result.Completed, len(result.Failures), result.Total)
 	if len(result.Failures) > 0 {
 		parts := make([]string, 0, len(result.Failures))
 		for _, failure := range result.Failures {

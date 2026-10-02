@@ -52,7 +52,7 @@ func TestChooserRespondsToEveryAction(t *testing.T) {
 			defer cmd.Process.Kill()
 			var hwnd uintptr
 			for deadline := time.Now().Add(10 * time.Second); time.Now().Before(deadline); {
-				hwnd, _, _ = find.Call(uintptr(unsafe.Pointer(utf16Ptr("MattMuxAllInOneWindow"))), 0)
+				hwnd, _, _ = find.Call(uintptr(unsafe.Pointer(utf16Ptr("MattRipAllInOneWindow"))), 0)
 				var pid uint32
 				owner.Call(hwnd, uintptr(unsafe.Pointer(&pid)))
 				if hwnd != 0 && pid == uint32(cmd.Process.Pid) {

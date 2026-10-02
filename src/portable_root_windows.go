@@ -16,7 +16,7 @@ func resolveAppDataRoot() string {
 
 func resolveAppDataRootFor(exePath, localAppData, home string) string {
 	if strings.TrimSpace(exePath) != "" {
-		portable := filepath.Join(filepath.Dir(exePath), "MattMuxData")
+		portable := filepath.Join(filepath.Dir(exePath), "MattRipData")
 		if st, err := os.Stat(portable); err == nil && st.IsDir() {
 			_ = os.MkdirAll(portable, 0755)
 			return portable
@@ -27,7 +27,7 @@ func resolveAppDataRootFor(exePath, localAppData, home string) string {
 	if root == "" && strings.TrimSpace(home) != "" {
 		root = filepath.Join(home, "AppData", "Local")
 	}
-	p := filepath.Join(root, "MattMux")
+	p := filepath.Join(root, "MattRip")
 	_ = os.MkdirAll(p, 0755)
 	return p
 }

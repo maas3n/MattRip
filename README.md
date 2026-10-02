@@ -1,24 +1,19 @@
-# MattMux
+# MattRip
 
-**MattMux** is a cross-platform media remuxing, demuxing, merging, batch-processing, and CLI tool for **Windows, Linux, Android, and ChromeOS**. It focuses on copying existing media streams without transcoding.
+**MattRip** is a cross-platform media remuxing, demuxing, merging, batch-processing, and CLI tool for **Windows, Linux, Android, and ChromeOS**. It focuses on copying existing media streams without transcoding.
 
-MattMux can remux DVD-Video titles to MKV, extract individual streams from DVD or MKV sources, combine selected streams from multiple files, and batch-remux DVD libraries. Windows, Linux, and Android/ChromeOS are developed together from the single `main` branch and use one shared product version.
+MattRip can remux DVD-Video titles to MKV, extract individual streams from DVD or MKV sources, combine selected streams from multiple files, and batch-remux DVD libraries. Windows, Linux, and Android/ChromeOS are developed together from the single `main` branch and use one shared product version.
 
-> MattMux does **not** bypass CSS or other DVD copy protection. Use unencrypted DVD-Video sources or media you are authorized to process.
+> The current MattRip baseline does **not yet** add CSS handling or physical-drive input. Those are planned fork features; this rebrand/cleanup change does not alter media access behavior.
 
-## Latest stable release: MattMux 1.4.19
+## Development status
 
-[**Download MattMux 1.4.19**](https://github.com/maas3n/MattMux/releases/tag/v1.4.19)
+MattRip is under active development and does not have a public MattRip release yet. The fork starts from the verified MattMux 1.4.19 source baseline at commit `a794b451e454d7e0343cf5ba00ab200080e8e60b` and keeps the existing cross-platform behavior while MattRip-specific features are developed.
 
-| Platform | Recommended package | Other options |
-| --- | --- | --- |
-| Windows x64 | `MattMux-1.4.19-Windows-All-in-One.exe` | Setup EXE or Portable ZIP; Setup/Portable include `mattmux-cli.exe` |
-| Linux amd64 | `MattMux-1.4.19-Linux-amd64Standalone` | Self-contained `.deb` or tarball; packaged CLI included |
-| Android / ChromeOS | `MattMux-1.4.19-Android.apk` | One signed universal APK for Android phones/tablets and Chromebooks with Android app support |
+The first cleanup work intentionally separates MattRip's product identity from MattMux without changing the media engine behavior.
 
-Releases also include exact source, third-party source/provenance and license material, platform checksum manifests, and a combined `SHA256SUMS.txt`.
 
-## What MattMux can do
+## What MattRip can do
 
 ### DVD Remux
 
@@ -28,17 +23,17 @@ The main **DVD Remux** tab accepts:
 - unmounted DVD ISO images
 - MKV files
 
-For DVD sources, MattMux discovers DVD titles, automatically selects the longest readable title, and lets you inspect metadata before processing. Video, audio, and subtitle streams are individually selectable. All detected streams are selected by default.
+For DVD sources, MattRip discovers DVD titles, automatically selects the longest readable title, and lets you inspect metadata before processing. Video, audio, and subtitle streams are individually selectable. All detected streams are selected by default.
 
 Choose **Start Remux** to create an MKV using stream copy. Chapter preservation is optional.
 
-Windows and Linux use FFmpeg's `dvdvideo` input backed by `libdvdread`/`libdvdnav`. Android/ChromeOS uses its native FFmpeg/libav, libdvdnav, libdvdread, and libudfread path. MattMux does not use its own DVD IFO parser.
+Windows and Linux use FFmpeg's `dvdvideo` input backed by `libdvdread`/`libdvdnav`. Android/ChromeOS uses its native FFmpeg/libav, libdvdnav, libdvdread, and libudfread path. MattRip does not use its own DVD IFO parser.
 
 ### Demux
 
 The **Demux** action in the DVD Remux tab extracts selected streams without re-encoding. It works with DVD folders, DVD ISOs, and MKV sources on Windows, Linux, and Android/ChromeOS.
 
-Depending on the selected streams, MattMux can export:
+Depending on the selected streams, MattRip can export:
 
 - MPEG-2 video as `.mpeg2` or video-only `.VOB`
 - H.264 as `.h264`
@@ -108,13 +103,13 @@ remux
 --batch
 ```
 
-Single-disc remuxing supports options including `--title`, `--streams 0,2`, `--no-chapters`, and `--output`. Windows Setup/Portable packages include `mattmux-cli.exe`; Linux packages include `mattmux-cli`, and the Linux Standalone accepts CLI commands directly or after `--cli`.
+Single-disc remuxing supports options including `--title`, `--streams 0,2`, `--no-chapters`, and `--output`. Windows Setup/Portable packages include `mattrip-cli.exe`; Linux packages include `mattrip-cli`, and the Linux Standalone accepts CLI commands directly or after `--cli`.
 
 Example:
 
 ```bash
-mattmux-cli remux --title 1 --streams 0,2 /path/to/DVD-or.iso
-mattmux-cli --batch --log=/path/to/mattmux-batch.log /path/to/Movies /path/to/output
+mattrip-cli remux --title 1 --streams 0,2 /path/to/DVD-or.iso
+mattrip-cli --batch --log=/path/to/mattrip-batch.log /path/to/Movies /path/to/output
 ```
 
 Android/ChromeOS also includes an in-app CLI with `scan`, `metadata`, `remux`, and `--batch` using Storage Access Framework content URIs. Android remux supports explicit `--streams` selection and `--no-chapters`.
@@ -152,7 +147,7 @@ Changing the source or DVD title clears the previous selection so stream indexes
 - All-in-One single-file GUI
 - normal Setup package
 - Portable ZIP
-- packaged `mattmux-cli.exe` in Setup/Portable
+- packaged `mattrip-cli.exe` in Setup/Portable
 - bundled FFmpeg, FFprobe and MediaInfo
 - current binaries are not Authenticode-signed
 
@@ -181,7 +176,7 @@ See [`android/README.md`](android/README.md) for Android-specific implementation
 
 ## Important limitations
 
-- MattMux does not decrypt CSS or other protected DVD content.
+- MattRip does not decrypt CSS or other protected DVD content.
 - Interleaved multi-angle DVD titles are unsupported on the current Android path.
 - Still/shuffle/multi-PGC DVD semantics are not fully supported on Android.
 - Android ISO input requires a seekable storage provider.
@@ -191,40 +186,7 @@ See [`android/README.md`](android/README.md) for Android-specific implementation
 
 ## Quick start
 
-### Windows
-
-Download one of these from the [MattMux 1.4.19 release](https://github.com/maas3n/MattMux/releases/tag/v1.4.19):
-
-- `MattMux-1.4.19-Windows-All-in-One.exe` — easiest single-file GUI option
-- `MattMux-1.4.19-Windows-Setup.exe` — normal installer with packaged CLI
-- `MattMux-1.4.19-Windows-Portable.zip` — portable GUI + CLI
-
-### Linux standalone
-
-```bash
-chmod +x MattMux-1.4.19-Linux-amd64Standalone
-./MattMux-1.4.19-Linux-amd64Standalone
-```
-
-### Debian / Ubuntu
-
-```bash
-sudo apt install ./MattMux-1.4.19-Linux-amd64.deb
-mattmux
-mattmux-cli --version
-```
-
-### Android / ChromeOS
-
-Download `MattMux-1.4.19-Android.apk` from the [MattMux 1.4.19 release](https://github.com/maas3n/MattMux/releases/tag/v1.4.19). The same universal APK is used on Android phones/tablets and Chromebooks with Android app support.
-
-### Output locations
-
-The Windows and Linux GUIs default to the user's Videos directory (or home) and remember the chosen output folder. `mattmux-cli remux` writes to the current working directory when `--output` is omitted, except where source-aware ISO output behavior applies.
-
-BATCH uses source-aware defaults: DVD-folder output goes into its movie folder and ISO output goes beside the ISO. An explicit output root overrides those defaults.
-
-Existing final outputs are not overwritten.
+There are no public MattRip binaries yet. Build MattRip from source using the platform instructions below while the fork is in development. Published MattMux 1.4.19 binaries remain MattMux artifacts and are not relabeled as MattRip.
 
 ## Build from source
 
@@ -272,7 +234,7 @@ See [`RELEASING.md`](RELEASING.md) for the full release policy.
 
 The current feature set grew substantially after the early 1.4.x releases. Notable additions and fixes include cross-platform Advanced Merger expansion, Advanced Merger selected-stream DEMUX with MPEG-2/VOB choice, one-click BATCH, shared Windows/Linux DVD CLI commands, Android BATCH and in-app CLI support, DVD ISO handling, native Android libdvdnav title selection, MKV input in the DVD Remux tab, direct DVD demux without a temporary MKV, DVD clock-reset/progress handling, DVD subtitle extraction, and stronger Windows/Linux/Android parity coverage.
 
-For version-by-version details, see [GitHub Releases](https://github.com/maas3n/MattMux/releases).
+MattRip inherited this feature set from MattMux 1.4.19. For the pre-fork version history, see [MattMux Releases](https://github.com/maas3n/MattMux/releases).
 
 ## Third-party runtime tools
 
@@ -282,4 +244,4 @@ Exact pinned versions, hashes, source revisions, licensing notes, and provenance
 
 ## License
 
-MattMux is licensed under the [MIT License](LICENSE). Third-party components remain governed by their own licenses.
+MattRip is licensed under the [MIT License](LICENSE). Third-party components remain governed by their own licenses.

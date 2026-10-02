@@ -8,7 +8,7 @@ WORK="$ROOT/dist/linux-work"
 LAUNCHER_SRC="$ROOT/packaging/linux/standalone/main.go"
 STAGE="$WORK/standalone-src"
 PAYLOAD="$STAGE/payload"
-OUT="$DIST/MattMux-$APP_VERSION-Linux-amd64Standalone"
+OUT="$DIST/MattRip-$APP_VERSION-Linux-amd64Standalone"
 
 [[ "$(uname -s)" == "Linux" ]] || { echo "Standalone build requires Linux." >&2; exit 1; }
 [[ "$(uname -m)" == "x86_64" ]] || { echo "Standalone build currently supports amd64/x86_64 only." >&2; exit 1; }
@@ -17,8 +17,8 @@ for cmd in python3 ldd ldconfig dpkg-query; do
   command -v "$cmd" >/dev/null 2>&1 || { echo "Missing build tool: $cmd" >&2; exit 1; }
 done
 
-APP="$WORK/bin/mattmux-bin"
-CLI="$WORK/bin/mattmux-cli-bin"
+APP="$WORK/bin/mattrip-bin"
+CLI="$WORK/bin/mattrip-cli-bin"
 FFMPEG="$(find "$WORK/tools/ffmpeg" -type f -name ffmpeg -perm -u+x | head -n1 || true)"
 FFPROBE="$(find "$WORK/tools/ffmpeg" -type f -name ffprobe -perm -u+x | head -n1 || true)"
 MEDIAINFO="$WORK/tools/mediainfo-install/bin/mediainfo"
@@ -30,20 +30,20 @@ done
 rm -rf "$STAGE"
 mkdir -p "$PAYLOAD"
 install -m 0644 "$LAUNCHER_SRC" "$STAGE/main.go"
-install -m 0755 "$APP" "$PAYLOAD/mattmux-bin"
-install -m 0755 "$CLI" "$PAYLOAD/mattmux-cli-bin"
+install -m 0755 "$APP" "$PAYLOAD/mattrip-bin"
+install -m 0755 "$CLI" "$PAYLOAD/mattrip-cli-bin"
 install -m 0755 "$FFMPEG" "$PAYLOAD/ffmpeg"
 install -m 0755 "$FFPROBE" "$PAYLOAD/ffprobe"
 install -m 0755 "$MEDIAINFO" "$PAYLOAD/mediainfo"
 gcc -O2 -Wall -Wextra "$ROOT/packaging/linux/graphics-probe.c" -o "$PAYLOAD/graphics-probe" -lGL -lX11
 python3 "$ROOT/packaging/linux/bundle-standalone-libs.py" "$PAYLOAD"
 # Preserve the existing multimedia notices alongside the new GUI notices.
-cp -a "$WORK/deb-root/usr/share/doc/mattmux/." "$PAYLOAD/licenses/"
+cp -a "$WORK/deb-root/usr/share/doc/mattrip/." "$PAYLOAD/licenses/"
 python3 "$ROOT/packaging/linux/collect-standalone-sources.py" \
   "$PAYLOAD/licenses/library-packages.json" \
-  "$DIST/MattMux-$APP_VERSION-Linux-Library-Sources.tar.gz"
+  "$DIST/MattRip-$APP_VERSION-Linux-Library-Sources.tar.gz"
 cat > "$STAGE/go.mod" <<'EOF'
-module mattmux-standalone
+module mattrip-standalone
 
 go 1.27.1
 EOF

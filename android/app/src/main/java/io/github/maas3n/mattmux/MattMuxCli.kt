@@ -22,7 +22,7 @@ internal object MattMuxCliSyntax {
 
     fun parse(commandLine: String): MattMuxCliCommand {
         val tokens = tokenize(commandLine).toMutableList()
-        if (tokens.firstOrNull() == "mattmux-cli") tokens.removeAt(0)
+        if (tokens.firstOrNull() == "mattrip-cli") tokens.removeAt(0)
         if (tokens.isEmpty() || tokens == listOf("--help") || tokens == listOf("-h") || tokens == listOf("help")) return MattMuxCliCommand.Help
         if (tokens == listOf("--version") || tokens == listOf("-version") || tokens == listOf("version")) return MattMuxCliCommand.Version
         return when (tokens.removeAt(0)) {
@@ -184,7 +184,7 @@ internal class MattMuxCliRunner(private val context: Context) {
         cancelled = false
         return when (val command = MattMuxCliSyntax.parse(commandLine)) {
             MattMuxCliCommand.Help -> {
-                emit("MattMux CLI ${BuildConfig.VERSION_NAME}")
+                emit("MattRip CLI ${BuildConfig.VERSION_NAME}")
                 emit("Usage:")
                 emit("  mattmux-cli scan SOURCE")
                 emit("  mattmux-cli metadata [--title N] SOURCE")
@@ -199,7 +199,7 @@ internal class MattMuxCliRunner(private val context: Context) {
                 emit("For a DVD-folder SOURCE, output defaults to that folder. Existing MKVs are never overwritten.")
                 0
             }
-            MattMuxCliCommand.Version -> { emit("MattMux CLI ${BuildConfig.VERSION_NAME} (Android/ChromeOS native)"); 0 }
+            MattMuxCliCommand.Version -> { emit("MattRip CLI ${BuildConfig.VERSION_NAME} (Android/ChromeOS native)"); 0 }
             is MattMuxCliCommand.Batch -> runBatch(command, emit, progress)
             is MattMuxCliCommand.Scan -> runScan(command, emit)
             is MattMuxCliCommand.Metadata -> runMetadata(command, emit)
@@ -290,7 +290,7 @@ internal class MattMuxCliRunner(private val context: Context) {
     }
 
     private fun requireEngine() {
-        check(engine.isAvailable) { engine.unavailableReason ?: "Native MattMux engine unavailable" }
+        check(engine.isAvailable) { engine.unavailableReason ?: "Native MattRip engine unavailable" }
     }
 
     private fun parseSourceUri(value: String, label: String): Uri {

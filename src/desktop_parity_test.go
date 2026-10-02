@@ -13,7 +13,7 @@ import (
 )
 
 func TestDesktopCLIArguments(t *testing.T) {
-	got, err := splitCLICommand(`mattmux-cli remux "C:\Movie Files\Alien.iso" --streams 0,2 --no-chapters`)
+	got, err := splitCLICommand(`mattrip-cli remux "C:\Movie Files\Alien.iso" --streams 0,2 --no-chapters`)
 	if err != nil || len(got) != 5 || got[1] != `C:\Movie Files\Alien.iso` {
 		t.Fatalf("%v %v", got, err)
 	}

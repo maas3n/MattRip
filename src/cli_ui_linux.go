@@ -11,7 +11,7 @@ import (
 
 func (g *linuxGUI) buildCLI() fyne.CanvasObject {
 	command := widget.NewEntry()
-	command.SetText("mattmux-cli --help")
+	command.SetText("mattrip-cli --help")
 	output := widget.NewMultiLineEntry()
 	output.Wrapping = fyne.TextWrapWord
 	var cancel context.CancelFunc
@@ -45,5 +45,5 @@ func (g *linuxGUI) buildCLI() fyne.CanvasObject {
 			})
 		}()
 	})
-	return container.NewBorder(container.NewVBox(widget.NewLabel("MattMux CLI — scan, metadata, remux, --batch; quote paths containing spaces."), command, container.NewHBox(run, stop)), nil, nil, nil, output)
+	return container.NewBorder(container.NewVBox(widget.NewLabel("MattRip CLI — scan, metadata, remux, --batch; quote paths containing spaces."), command, container.NewHBox(run, stop)), nil, nil, nil, output)
 }

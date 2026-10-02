@@ -103,25 +103,13 @@ jobs:
           go-version: '1.27.1'
           cache: false
 
-      - name: Inject tag version into Windows source
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $version = '${{ needs.metadata.outputs.version }}'
-          $path = '.\src\app_windows.go'
-          $text = Get-Content -LiteralPath $path -Raw
-          $old = 'appVersion = "1.2.0"'
-          if (-not $text.Contains($old)) {
-            throw "Windows version declaration changed; update unified release version injection before publishing."
-          }
-          $text = $text.Replace($old, "appVersion = `"$version`"")
-          Set-Content -LiteralPath $path -Value $text -Encoding UTF8 -NoNewline
 
       - name: Test and build Windows GUI
         shell: pwsh
         working-directory: src
         run: |
           $ErrorActionPreference = 'Stop'
+          $env:MATTRIP_VERSION = '${{ needs.metadata.outputs.version }}'
           go test ./...
           go vet ./...
           .\build.ps1
@@ -133,7 +121,7 @@ jobs:
           $miVersion = '26.05'
           $miAsset = 'MediaInfo_CLI_26.05_Windows_x64.zip'
           $miSha = 'f7f80620ce6d14f4995f0de6f98e3ef18ad29496db01899571152ee3311229f9'
-          $work = Join-Path $env:RUNNER_TEMP 'mattmux-bundled-tools'
+          $work = Join-Path $env:RUNNER_TEMP 'mattrip-bundled-tools'
           $stage = Join-Path $PWD 'packaging\installer\bundled-tools'
           Remove-Item $work,$stage -Recurse -Force -ErrorAction SilentlyContinue
           New-Item -ItemType Directory -Force -Path $work,$stage | Out-Null
@@ -180,34 +168,34 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $version = '${{ needs.metadata.outputs.version }}'
           New-Item -ItemType Directory -Force -Path .\dist | Out-Null
-          $stage = Join-Path $PWD "dist\MattMux-$version-Windows-Portable"
-          $releaseZip = Join-Path $PWD "dist\MattMux-$version-Windows-Portable.zip"
-          $internalZip = Join-Path $PWD "dist\MattMux-$version-Portable.zip"
+          $stage = Join-Path $PWD "dist\MattRip-$version-Windows-Portable"
+          $releaseZip = Join-Path $PWD "dist\MattRip-$version-Windows-Portable.zip"
+          $internalZip = Join-Path $PWD "dist\MattRip-$version-Portable.zip"
           Remove-Item $stage -Recurse -Force -ErrorAction SilentlyContinue
           Remove-Item $releaseZip,$internalZip -Force -ErrorAction SilentlyContinue
 
-          $ffDest = Join-Path $stage 'MattMuxData\tools\ffmpeg-2026-09-08'
-          $miDest = Join-Path $stage 'MattMuxData\tools\mediainfo-26.05'
+          $ffDest = Join-Path $stage 'MattRipData\tools\ffmpeg-2026-09-08'
+          $miDest = Join-Path $stage 'MattRipData\tools\mediainfo-26.05'
           New-Item -ItemType Directory -Force -Path $ffDest,$miDest | Out-Null
 
-          Copy-Item .\MattMux.exe (Join-Path $stage 'MattMux-Portable.exe') -Force
-          Copy-Item .\mattmux-cli.exe (Join-Path $stage 'mattmux-cli.exe') -Force
-          Copy-Item .\src\MattMux.exe.manifest (Join-Path $stage 'MattMux-Portable.exe.manifest') -Force
-          Copy-Item .\src\MattMux.ico (Join-Path $stage 'MattMux.ico') -Force
+          Copy-Item .\MattRip.exe (Join-Path $stage 'MattRip-Portable.exe') -Force
+          Copy-Item .\mattrip-cli.exe (Join-Path $stage 'mattrip-cli.exe') -Force
+          Copy-Item .\src\MattRip.exe.manifest (Join-Path $stage 'MattRip-Portable.exe.manifest') -Force
+          Copy-Item .\src\MattRip.ico (Join-Path $stage 'MattRip.ico') -Force
           Copy-Item .\THIRD_PARTY.md (Join-Path $stage 'THIRD_PARTY.md') -Force
           Copy-Item .\packaging\installer\bundled-tools\ffmpeg-2026-09-08\* $ffDest -Force
           Copy-Item .\packaging\installer\bundled-tools\mediainfo-26.05\MediaInfo.exe $miDest -Force
 
           @(
-            "MattMux $version Portable",
+            "MattRip $version Portable",
             "=========================",
             "",
-            "Extract this entire folder and run MattMux-Portable.exe.",
-            "The included mattmux-cli.exe supports scan, metadata, remux, --batch, --streams, --title and --no-chapters.",
+            "Extract this entire folder and run MattRip-Portable.exe.",
+            "The included mattrip-cli.exe supports scan, metadata, remux, --batch, --streams, --title and --no-chapters.",
             "No installer is required and no FFmpeg, FFprobe, or MediaInfo download is required.",
             "",
             "Keep the folder together. Portable settings, logs, and bundled tools are stored under:",
-            "  MattMuxData\"
+            "  MattRipData\"
           ) | Set-Content -LiteralPath (Join-Path $stage 'README-PORTABLE.txt') -Encoding UTF8
 
           $checksumPath = Join-Path $stage 'CHECKSUMS.txt'
@@ -222,7 +210,7 @@ jobs:
           $lines | Set-Content -LiteralPath $checksumPath -Encoding ASCII
           Compress-Archive -LiteralPath $stage -DestinationPath $releaseZip -CompressionLevel Optimal
 
-          # The all-in-one builder still consumes the historical internal filename.
+          # Stage the portable archive under the filename consumed by the All-in-One builder.
           Copy-Item -LiteralPath $releaseZip -Destination $internalZip -Force
 
       - name: Install Inno Setup
@@ -235,7 +223,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $version = '${{ needs.metadata.outputs.version }}'
           $numericVersion = '${{ needs.metadata.outputs.windows_numeric_version }}'
-          $issPath = '.\packaging\installer\MattMux.iss'
+          $issPath = '.\packaging\installer\MattRip.iss'
 
           $iss = Get-Content -LiteralPath $issPath -Raw
           $needle = 'VersionInfoVersion={#MyAppVersion}.0'
@@ -254,30 +242,20 @@ jobs:
 
           & $iscc "/DMyAppVersion=$version" $issPath
           if ($LASTEXITCODE -ne 0) { throw "Installer build failed with exit code $LASTEXITCODE" }
-          $setup = ".\dist\MattMux-$version-Setup.exe"
-          $releaseSetup = ".\dist\MattMux-$version-Windows-Setup.exe"
+          $setup = ".\dist\MattRip-$version-Setup.exe"
+          $releaseSetup = ".\dist\MattRip-$version-Windows-Setup.exe"
           if (-not (Test-Path -LiteralPath $setup)) { throw "Missing installer: $setup" }
           Move-Item -LiteralPath $setup -Destination $releaseSetup -Force
 
           $aioScript = '.\packaging\all-in-one\Build-AllInOne.ps1'
-          $aioMain = '.\packaging\all-in-one\main.go'
-          foreach ($path in @($aioScript, $aioMain)) {
-            $text = Get-Content -LiteralPath $path -Raw
-            if (-not $text.Contains('1.2.0')) {
-              throw "Expected historical version marker was not found in $path"
-            }
-            $text = $text.Replace('1.2.0', $version)
-            Set-Content -LiteralPath $path -Value $text -Encoding UTF8 -NoNewline
-          }
-
-          & $aioScript
+          & $aioScript -AppVersion $version
           if ($LASTEXITCODE -ne 0) { throw "All-in-One build failed with exit code $LASTEXITCODE" }
-          $aio = ".\dist\MattMux-$version-All-in-One.exe"
-          $releaseAio = ".\dist\MattMux-$version-Windows-All-in-One.exe"
+          $aio = ".\dist\MattRip-$version-All-in-One.exe"
+          $releaseAio = ".\dist\MattRip-$version-Windows-All-in-One.exe"
           if (-not (Test-Path -LiteralPath $aio)) { throw "Missing All-in-One executable: $aio" }
           Move-Item -LiteralPath $aio -Destination $releaseAio -Force
 
-          Remove-Item ".\dist\MattMux-$version-Portable.zip" -Force -ErrorAction SilentlyContinue
+          Remove-Item ".\dist\MattRip-$version-Portable.zip" -Force -ErrorAction SilentlyContinue
 
       - name: Create Windows checksums
         shell: pwsh
@@ -285,9 +263,9 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $version = '${{ needs.metadata.outputs.version }}'
           $assets = @(
-            ".\dist\MattMux-$version-Windows-Setup.exe",
-            ".\dist\MattMux-$version-Windows-All-in-One.exe",
-            ".\dist\MattMux-$version-Windows-Portable.zip"
+            ".\dist\MattRip-$version-Windows-Setup.exe",
+            ".\dist\MattRip-$version-Windows-All-in-One.exe",
+            ".\dist\MattRip-$version-Windows-Portable.zip"
           )
           $lines = foreach ($asset in $assets) {
             if (-not (Test-Path -LiteralPath $asset)) { throw "Missing release asset: $asset" }
@@ -304,9 +282,9 @@ jobs:
           name: release-windows
           if-no-files-found: error
           path: |
-            dist/MattMux-${{ needs.metadata.outputs.version }}-Windows-Setup.exe
-            dist/MattMux-${{ needs.metadata.outputs.version }}-Windows-All-in-One.exe
-            dist/MattMux-${{ needs.metadata.outputs.version }}-Windows-Portable.zip
+            dist/MattRip-${{ needs.metadata.outputs.version }}-Windows-Setup.exe
+            dist/MattRip-${{ needs.metadata.outputs.version }}-Windows-All-in-One.exe
+            dist/MattRip-${{ needs.metadata.outputs.version }}-Windows-Portable.zip
             dist/SHA256SUMS-Windows.txt
 
   linux:
@@ -352,18 +330,18 @@ jobs:
         run: |
           set -euo pipefail
           version='${{ needs.metadata.outputs.version }}'
-          deb="dist/linux-release/MattMux-$version-Linux-amd64.deb"
-          standalone="dist/linux-release/MattMux-$version-Linux-amd64Standalone"
+          deb="dist/linux-release/MattRip-$version-Linux-amd64.deb"
+          standalone="dist/linux-release/MattRip-$version-Linux-amd64Standalone"
 
           dpkg-deb --info "$deb"
           tmp="$(mktemp -d)"
           trap 'rm -rf "$tmp"' EXIT
           dpkg-deb --extract "$deb" "$tmp"
-          test -x "$tmp/usr/bin/mattmux"
-          test -x "$tmp/usr/bin/mattmux-cli"
-          test -x "$tmp/usr/lib/mattmux/ffmpeg-bin/ffmpeg"
-          test -x "$tmp/usr/lib/mattmux/ffprobe-bin/ffprobe" || test -x "$tmp/usr/lib/mattmux/ffmpeg-bin/ffprobe"
-          test -x "$tmp/usr/lib/mattmux/mediainfo-bin/mediainfo"
+          test -x "$tmp/usr/bin/mattrip"
+          test -x "$tmp/usr/bin/mattrip-cli"
+          test -x "$tmp/usr/lib/mattrip/ffmpeg-bin/ffmpeg"
+          test -x "$tmp/usr/lib/mattrip/ffprobe-bin/ffprobe" || test -x "$tmp/usr/lib/mattrip/ffmpeg-bin/ffprobe"
+          test -x "$tmp/usr/lib/mattrip/mediainfo-bin/mediainfo"
 
           test -x "$standalone"
           file "$standalone" | grep -E 'ELF 64-bit.*x86-64'
@@ -443,8 +421,8 @@ jobs:
           KEYSTORE_B64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
         run: |
           set -euo pipefail
-          printf '%s' "$KEYSTORE_B64" | base64 --decode > "${RUNNER_TEMP}/mattmux-upload.jks"
-          test -s "${RUNNER_TEMP}/mattmux-upload.jks"
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "${RUNNER_TEMP}/mattrip-upload.jks"
+          test -s "${RUNNER_TEMP}/mattrip-upload.jks"
 
       - name: Build bundled LGPL FFmpeg runtime
         run: |
@@ -460,14 +438,14 @@ jobs:
 
       - name: Test, lint and build signed versioned APK
         env:
-          ORG_GRADLE_PROJECT_MATTMUX_UPLOAD_STORE_FILE: ${{ runner.temp }}/mattmux-upload.jks
-          ORG_GRADLE_PROJECT_MATTMUX_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
-          ORG_GRADLE_PROJECT_MATTMUX_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
-          ORG_GRADLE_PROJECT_MATTMUX_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+          ORG_GRADLE_PROJECT_MATTRIP_UPLOAD_STORE_FILE: ${{ runner.temp }}/mattrip-upload.jks
+          ORG_GRADLE_PROJECT_MATTRIP_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_MATTRIP_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          ORG_GRADLE_PROJECT_MATTRIP_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
         run: |
           gradle -p android \
-            -PMATTMUX_VERSION_NAME='${{ needs.metadata.outputs.version }}' \
-            -PMATTMUX_VERSION_CODE='${{ needs.metadata.outputs.android_version_code }}' \
+            -PMATTRIP_VERSION_NAME='${{ needs.metadata.outputs.version }}' \
+            -PMATTRIP_VERSION_CODE='${{ needs.metadata.outputs.android_version_code }}' \
             :app:testDebugUnitTest :app:lintRelease :app:assembleRelease
 
       - name: Verify version and bundled native libraries
@@ -486,8 +464,8 @@ jobs:
           python3 android/native/verify-package.py "$APK"
           unzip -p "$APK" assets/ffmpeg/ffmpeg-build-info.txt | grep -q 'FFmpeg version: 9.0.1'
           "${ANDROID_HOME}/build-tools/36.0.0/zipalign" -c -P 16 -v 4 "$APK"
-          "${ANDROID_HOME}/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK" | tee /tmp/mattmux-apksigner.txt
-          ! grep -Fq "CN=Android Debug" /tmp/mattmux-apksigner.txt
+          "${ANDROID_HOME}/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK" | tee /tmp/mattrip-apksigner.txt
+          ! grep -Fq "CN=Android Debug" /tmp/mattrip-apksigner.txt
 
       - name: Prepare Android / ChromeOS release payload
         run: |
@@ -496,8 +474,8 @@ jobs:
           mkdir -p dist/android-release
           APK="$(find android/app/build/outputs/apk/release -name '*.apk' -print -quit)"
 
-          cp "$APK" "dist/android-release/MattMux-$version-Android.apk"
-          test -s "dist/android-release/MattMux-$version-Android.apk"
+          cp "$APK" "dist/android-release/MattRip-$version-Android.apk"
+          test -s "dist/android-release/MattRip-$version-Android.apk"
           cp "android/native/.work/ffmpeg-${FFMPEG_VERSION}.tar.xz" "dist/android-release/FFmpeg-${FFMPEG_VERSION}-source.tar.xz"
           cp android/native/.work/libudfread-1.1.2-source.tar.gz dist/android-release/
           cp android/native/.work/MediaInfoLib-source.tar.gz android/native/.work/ZenLib-source.tar.gz dist/android-release/
@@ -550,7 +528,7 @@ jobs:
         run: |
           set -euo pipefail
           version='${{ needs.metadata.outputs.version }}'
-          cp THIRD_PARTY.md "release-assets/MattMux-$version-THIRD-PARTY.md"
+          cp THIRD_PARTY.md "release-assets/MattRip-$version-THIRD-PARTY.md"
 
           (
             cd release-assets
@@ -590,7 +568,7 @@ jobs:
             --repo "$GITHUB_REPOSITORY"
             --verify-tag
             --target "$(git rev-parse HEAD)"
-            --title "MattMux $version"
+            --title "MattRip $version"
             --generate-notes
           )
           if [[ "$prerelease" == "true" ]]; then

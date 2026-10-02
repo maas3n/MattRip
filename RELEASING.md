@@ -1,31 +1,31 @@
-# Releasing MattMux
+# Releasing MattRip
 
-MattMux uses one long-lived source branch, `main`, and one product version namespace across Windows, Linux, and Android/ChromeOS.
+MattRip uses one long-lived source branch, `main`, and one product version namespace across Windows, Linux, and Android/ChromeOS.
 
 ## Unified release model
 
 Every new public release uses exactly one product tag and one GitHub Release:
 
-- stable: `vMAJOR.MINOR.PATCH` (for example `v1.4.0`)
-- preview: `vMAJOR.MINOR.PATCH-alpha.N`, `-beta.N`, or `-rc.N` (for example `v1.4.0-alpha.1`)
+- stable: `vMAJOR.MINOR.PATCH`
+- preview: `vMAJOR.MINOR.PATCH-alpha.N`, `-beta.N`, or `-rc.N`
 
 Do not create new platform-specific version tags such as `-linux`, `-chromeos`, `-windows`, or separate `devN` release lines. Historical platform-specific tags remain valid historical pointers and are not rewritten.
 
 A unified release contains the platform assets that are ready from the same tagged commit. Typical assets are:
 
-- `MattMux-<version>-Windows-Setup.exe`
-- `MattMux-<version>-Windows-All-in-One.exe`
-- `MattMux-<version>-Windows-Portable.zip`
-- `MattMux-<version>-Linux-amd64.deb`
-- `MattMux-<version>-Linux-amd64.tar.gz`
-- `MattMux-<version>-Linux-amd64Standalone`
-- `MattMux-<version>-Source.tar.gz`
-- `MattMux-<version>-Android.apk` — universal APK for Android phones/tablets and Chromebooks with Android app support
+- `MattRip-<version>-Windows-Setup.exe`
+- `MattRip-<version>-Windows-All-in-One.exe`
+- `MattRip-<version>-Windows-Portable.zip`
+- `MattRip-<version>-Linux-amd64.deb`
+- `MattRip-<version>-Linux-amd64.tar.gz`
+- `MattRip-<version>-Linux-amd64Standalone`
+- `MattRip-<version>-Source.tar.gz`
+- `MattRip-<version>-Android.apk` — universal APK for Android phones/tablets and Chromebooks with Android app support
 - third-party source/provenance/license files
 - per-platform checksum manifests
 - one combined `SHA256SUMS.txt`
 
-`MattMux-<version>-Android.apk` is the single persistently signed universal APK for both Android phones/tablets and Chromebooks with Android app support.
+`MattRip-<version>-Android.apk` is the single persistently signed universal APK for both Android phones/tablets and Chromebooks with Android app support.
 
 GitHub also exposes source ZIP/tar archives automatically for the release tag.
 
@@ -43,8 +43,9 @@ GitHub also exposes source ZIP/tar archives automatically for the release tag.
 - Merge the intended source into `main`.
 - Confirm Windows, Linux, and Android/ChromeOS CI is green.
 - Confirm pinned third-party versions/checksums and licensing/provenance documentation are current.
-- Decide whether the release is stable (`v1.4.0`) or a shared preview (`v1.4.0-alpha.1`).
-- Do not reuse a tag that already has a GitHub Release.
+- Choose a MattRip version/tag that is unused in this fork. Inherited MattMux tags are provenance and must not be reused for MattRip releases.
+- Decide whether the release is stable or a shared preview.
+- Do not reuse a tag that already exists or already has a GitHub Release.
 
 ## Publishing
 
@@ -53,15 +54,15 @@ Create the tag from the exact `main` commit to publish and push it:
 ```bash
 git switch main
 git pull --ff-only
-git tag v1.4.0
-git push origin v1.4.0
+git tag vX.Y.Z
+git push origin vX.Y.Z
 ```
 
 For a preview:
 
 ```bash
-git tag v1.4.0-alpha.1
-git push origin v1.4.0-alpha.1
+git tag vX.Y.Z-alpha.1
+git push origin vX.Y.Z-alpha.1
 ```
 
 The **Unified release** workflow then:
@@ -70,7 +71,7 @@ The **Unified release** workflow then:
 2. derives one product version plus the Android `versionCode`;
 3. builds the Windows payload;
 4. builds the Linux payload;
-5. builds one signed universal `MattMux-<version>-Android.apk` for both Android and ChromeOS;
+5. builds one signed universal `MattRip-<version>-Android.apk` for both Android and ChromeOS;
 6. verifies each platform payload;
 7. downloads all platform artifacts into one release job;
 8. creates a combined `SHA256SUMS.txt`; and
@@ -91,11 +92,11 @@ The unified workflow derives a monotonically ordered Android versionCode from th
 
 Android/ChromeOS purchases remain disabled until production device validation, signing, and purchase-verification readiness are complete. The separate Play bundle workflow is distribution tooling; it does not create GitHub Releases.
 
-GitHub release APKs after v1.4.0 use the persistent Android upload-signing credentials. The v1.4.0 APK was debug-signed, so an in-place upgrade from that APK must not be promised unless its original debug key is proven compatible. Release notes for the first persistently signed APK must call out the migration requirement. Preserve the same distribution key for subsequent APK releases and verify its certificate before publishing.
+MattRip uses the separate application ID `io.github.maas3n.mattrip`, so it is a different Android app from MattMux and is not an in-place upgrade path for MattMux APKs. Establish and preserve MattRip's own release-signing identity before the first public APK, and verify its certificate before publishing.
 
 ## Historical releases
 
-Windows `v1.2.0`, Linux `v1.3.0-dev5`, and the old ChromeOS alpha line are historical development lines from before the unified release model. Their development remains in Git history; obsolete public release entries/tags were retired during the unified-release cleanup. Do not recreate platform-specific release lines. New releases use the unified version namespace only.
+The repository was forked from the verified MattMux 1.4.19 source baseline. Any inherited MattMux tags, platform-specific tags, and old release-line history are pre-fork provenance, not MattRip releases. Leave them immutable and do not reuse them for MattRip. New MattRip releases use only new, unused unified tags.
 
 ## Emergency fixes
 

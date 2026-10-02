@@ -1,6 +1,6 @@
 # Third-party software
 
-MattMux relies on FFmpeg/FFprobe and MediaInfo on desktop platforms. Their source or binary distributions are not committed to the normal repository history. Self-contained release packages download/build the pinned versions during CI, verify them, and then bundle the resulting runtime privately with MattMux.
+MattRip relies on FFmpeg/FFprobe and MediaInfo on desktop platforms. Their source or binary distributions are not committed to the normal repository history. Self-contained release packages download/build the pinned versions during CI, verify them, and then bundle the resulting runtime privately with MattRip.
 
 ## Windows 1.2.0
 
@@ -13,7 +13,7 @@ MattMux relies on FFmpeg/FFprobe and MediaInfo on desktop platforms. Their sourc
 - Trusted manifest SHA-256: `f64be162403094773397bfcc299a4a059507028afa7563591fd05c17d56b3214`
 - Verified archive SHA-256: `3139da8c0e3d201d16d849d2d6da2744b2b715f8d71184c4196db43da07b9607`
 
-MattMux verifies the pinned checksum manifest first, then verifies the FFmpeg archive against the expected value before using it.
+MattRip verifies the pinned checksum manifest first, then verifies the FFmpeg archive against the expected value before using it.
 
 ### MediaInfo CLI
 
@@ -32,7 +32,7 @@ The Windows Setup EXE, Portable ZIP, and All-in-One EXE bundle these verified ru
 - Asset: `ffmpeg-N-126479-g08cd8df29d-linux64-gpl.tar.xz`
 - Trusted archive SHA-256: `635a2d74de852064852e95db5a9c475a86d36e2b6390e3c1ba5e46b2c46dfce0`
 
-The self-contained `.deb` and single-file standalone build keep FFmpeg and FFprobe private to MattMux. They do not install or replace `/usr/bin/ffmpeg` or `/usr/bin/ffprobe` and do not modify the global system `PATH`.
+The self-contained `.deb` and single-file standalone build keep FFmpeg and FFprobe private to MattRip. They do not install or replace `/usr/bin/ffmpeg` or `/usr/bin/ffprobe` and do not modify the global system `PATH`.
 
 ### MediaInfo CLI
 
@@ -44,7 +44,7 @@ Linux MediaInfo is built from an exact pinned source set rather than from moving
 - ZenLib commit: `2ddc277fe7ecfcbfe45616bb9cd9e23079113ecd`
 - MediaArea zlib commit: `eaaf237c8cbc7310170c43202c6ec2cff64fff66`
 
-The self-contained Linux packages keep the resulting MediaInfo binary private to MattMux and do not replace `/usr/bin/mediainfo`.
+The self-contained Linux packages keep the resulting MediaInfo binary private to MattRip and do not replace `/usr/bin/mediainfo`.
 
 ## Android / ChromeOS Alpha 4
 
@@ -62,16 +62,16 @@ Android releases must include source/provenance and license material for all fou
 
 ## Licensing
 
-MattMux itself is licensed under MIT. Third-party projects keep their own licenses and copyright notices.
+MattRip itself is licensed under MIT. Third-party projects keep their own licenses and copyright notices.
 
-The Windows and Linux FFmpeg distributions currently used by MattMux are GPL-enabled builds because the desktop DVD workflow depends on FFmpeg's `dvdvideo` support with the relevant DVD libraries. The Android FFmpeg build is handled separately under its own build configuration and licensing requirements.
+The Windows and Linux FFmpeg distributions currently used by MattRip are GPL-enabled builds because the desktop DVD workflow depends on FFmpeg's `dvdvideo` support with the relevant DVD libraries. The Android FFmpeg build is handled separately under its own build configuration and licensing requirements.
 
-Anyone redistributing MattMux together with third-party binaries should review and satisfy the corresponding FFmpeg, BtbN/FFmpeg-Builds, MediaInfo, MediaInfoLib, ZenLib, zlib, libudfread, and other applicable license/source-distribution obligations.
+Anyone redistributing MattRip together with third-party binaries should review and satisfy the corresponding FFmpeg, BtbN/FFmpeg-Builds, MediaInfo, MediaInfoLib, ZenLib, zlib, libudfread, and other applicable license/source-distribution obligations.
 
 ## Preserved desktop FFmpeg build inputs
 
 BtbN can remove old daily-build archives. Packaging can recover the same FFmpeg
-binaries already shipped in MattMux 1.4.13 from these immutable inputs, verified
+binaries originally shipped in MattMux 1.4.13 from these immutable inputs, verified
 before extraction:
 
 - Linux: `MattMux-1.4.13-Linux-amd64.deb`, SHA-256
@@ -83,7 +83,7 @@ These contain the existing `N-126479-g08cd8df29d` FFmpeg build; recovery does no
 substitute a newer FFmpeg revision. The Linux standalone also includes private
 GUI library notices and records their binary/source package versions under
 `licenses/library-packages.json`. Exact source packages accompany each new
-release in `MattMux-VERSION-Linux-Library-Sources.tar.gz`.
+release in `MattRip-VERSION-Linux-Library-Sources.tar.gz`.
 
 ## Android MediaInfo metadata
 

@@ -1,9 +1,9 @@
-# MattMux on Debian / Ubuntu
+# MattRip on Debian / Ubuntu
 
 The Linux port provides two executables from the same source tree:
 
-- `mattmux` — desktop GUI (Fyne)
-- `mattmux-cli` — command-line interface
+- `mattrip` — desktop GUI (Fyne)
+- `mattrip-cli` — command-line interface
 
 ## Runtime tool policy
 
@@ -32,13 +32,13 @@ display. It verifies software fallback, failure with the private renderer stack
 removed, and preference for a working host driver. Library source
 package names and exact versions are recorded in the extracted
 `licenses/library-packages.json`. The build downloads the exact corresponding
-source packages into `MattMux-VERSION-Linux-Library-Sources.tar.gz`. Build hosts
+source packages into `MattRip-VERSION-Linux-Library-Sources.tar.gz`. Build hosts
 need Debian/Ubuntu source repositories (`deb-src`) enabled; CI enables these
 before building. This is a build prerequisite, not an end-user requirement.
 
 ### Other Linux packages
 
-MattMux always checks the user's existing tools first:
+MattRip always checks the user's existing tools first:
 
 1. Locate `ffmpeg` and `ffprobe` on `PATH`.
 2. Verify that FFmpeg exposes the `dvdvideo` demuxer.
@@ -46,7 +46,7 @@ MattMux always checks the user's existing tools first:
 4. If FFmpeg is missing or unsuitable, download the pinned BtbN Linux amd64 build and verify its SHA-256 before using it from the user's cache.
 5. Use system `mediainfo` when available. MediaInfo is optional and is recommended by the `.deb` package.
 
-Run `mattmux-cli tools` to inspect what MattMux sees on a machine.
+Run `mattrip-cli tools` to inspect what MattRip sees on a machine.
 
 ## Build from source on Debian / Ubuntu
 
@@ -62,8 +62,8 @@ Then build both binaries:
 ```bash
 cd src
 go mod download
-go build -o mattmux .
-go build -tags cli -o mattmux-cli .
+go build -o mattrip .
+go build -tags cli -o mattrip-cli .
 ```
 
 To create the `.deb`, portable binary tarball, source tarball, and checksums from the repository root:
@@ -75,7 +75,7 @@ bash packaging/linux/build-linux-release.sh 1.3.0-dev1
 Install the generated `.deb` with `apt` so recommended distro tools are installed automatically when available:
 
 ```bash
-sudo apt install ./dist/linux-release/mattmux_1.3.0~dev1_amd64.deb
+sudo apt install ./dist/linux-release/mattrip_1.3.0~dev1_amd64.deb
 ```
 
-MattMux does not bypass DVD copy protection such as CSS.
+MattRip does not bypass DVD copy protection such as CSS.

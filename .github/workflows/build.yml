@@ -40,8 +40,8 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force assets | Out-Null
-          Set-Content assets/MattMux-1.2.0-Portable.zip 'test payload'
-          Set-Content assets/MattMux-1.2.0-Thin-Setup.exe 'test payload'
+          Set-Content assets/MattRip-1.2.0-Portable.zip 'test payload'
+          Set-Content assets/MattRip-1.2.0-Thin-Setup.exe 'test payload'
           go test -v main.go main_test.go
           if ($LASTEXITCODE -ne 0) { throw 'All-in-One chooser test failed' }
 
@@ -51,9 +51,9 @@ jobs:
           $env:CGO_ENABLED = '0'
           $env:GOOS = 'windows'
           $env:GOARCH = 'amd64'
-          go build -trimpath -buildvcs=false -ldflags "-s -w -H=windowsgui" -o ..\MattMux.exe .
-          Copy-Item .\MattMux.exe.manifest ..\MattMux.exe.manifest -Force
-          Get-FileHash ..\MattMux.exe -Algorithm SHA256
+          go build -trimpath -buildvcs=false -ldflags "-s -w -H=windowsgui" -o ..\MattRip.exe .
+          Copy-Item .\MattRip.exe.manifest ..\MattRip.exe.manifest -Force
+          Get-FileHash ..\MattRip.exe -Algorithm SHA256
 
       - name: Build and smoke-test Windows batch CLI
         shell: pwsh
@@ -61,17 +61,17 @@ jobs:
           $env:CGO_ENABLED = '0'
           $env:GOOS = 'windows'
           $env:GOARCH = 'amd64'
-          go build -trimpath -buildvcs=false -tags cli -ldflags "-s -w" -o ..\mattmux-cli.exe .
-          & ..\mattmux-cli.exe --version
-          $help = (& ..\mattmux-cli.exe 2>&1 | Out-String)
+          go build -trimpath -buildvcs=false -tags cli -ldflags "-s -w" -o ..\mattrip-cli.exe .
+          & ..\mattrip-cli.exe --version
+          $help = (& ..\mattrip-cli.exe 2>&1 | Out-String)
           foreach ($feature in @('--batch', '--streams', '--no-chapters', 'scan', 'metadata', 'remux')) { if (-not $help.Contains($feature)) { throw "CLI help missing $feature" } }
-          Get-FileHash ..\mattmux-cli.exe -Algorithm SHA256
+          Get-FileHash ..\mattrip-cli.exe -Algorithm SHA256
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MattMux-windows-amd64
+          name: MattRip-windows-amd64
           path: |
-            MattMux.exe
-            MattMux.exe.manifest
-            mattmux-cli.exe
+            MattRip.exe
+            MattRip.exe.manifest
+            mattrip-cli.exe

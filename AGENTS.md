@@ -1,9 +1,9 @@
-# MattMux cross-platform release requirements
+# MattRip cross-platform release requirements
 
 - Keep Android, Windows and Linux improvements aligned. For every media feature
   or bug fix, inspect all three implementations, update applicable counterparts,
   and test their common behavior. Document unavoidable platform differences.
-- Never implement a MattMux-written IFO parser. DVD titles, navigation, planning
+- Never implement a MattRip-written IFO parser. DVD titles, navigation, planning
   and chapters must come from libdvdnav/libdvdread, directly on Android or via
   FFmpeg/FFprobe dvdvideo on desktop. Do not add parser fallbacks.
 - BATCH accepts DVD folders and unmounted ISOs. Blank output means an MKV beside

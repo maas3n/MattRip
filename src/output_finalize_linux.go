@@ -19,7 +19,7 @@ var renameOutputNoReplace = func(partial, final string) error {
 var linkOutputNoReplace = os.Link
 
 func reservePartialOutput(final string) (string, error) {
-	pattern := ".mattmux-" + filepath.Base(final) + ".*.partial.mkv"
+	pattern := ".mattrip-" + filepath.Base(final) + ".*.partial.mkv"
 	f, err := os.CreateTemp(filepath.Dir(final), pattern)
 	if err != nil {
 		return "", fmt.Errorf("create unique temporary output: %w", err)

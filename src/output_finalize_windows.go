@@ -11,12 +11,12 @@ import (
 	"unsafe"
 )
 
-var procMattMuxMoveFileExW = syscall.NewLazyDLL("kernel32.dll").NewProc("MoveFileExW")
+var procMattRipMoveFileExW = syscall.NewLazyDLL("kernel32.dll").NewProc("MoveFileExW")
 
 const mattMuxMoveFileWriteThrough = 0x00000008
 
 func reservePartialOutput(final string) (string, error) {
-	pattern := ".mattmux-" + filepath.Base(final) + ".*.partial.mkv"
+	pattern := ".mattrip-" + filepath.Base(final) + ".*.partial.mkv"
 	f, err := os.CreateTemp(filepath.Dir(final), pattern)
 	if err != nil {
 		return "", fmt.Errorf("create unique temporary output: %w", err)
@@ -72,7 +72,7 @@ func commitOutputNoReplace(partial, final string) error {
 		return fmt.Errorf("encode final output path: %w", err)
 	}
 
-	r1, _, callErr := procMattMuxMoveFileExW.Call(
+	r1, _, callErr := procMattRipMoveFileExW.Call(
 		uintptr(unsafe.Pointer(from)),
 		uintptr(unsafe.Pointer(to)),
 		uintptr(mattMuxMoveFileWriteThrough),
