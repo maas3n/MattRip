@@ -27,6 +27,8 @@ func linuxOpticalBlockDevice(path string) bool {
 	return strings.TrimSpace(string(data)) == "5"
 }
 
+var linuxOpticalDevice = linuxOpticalBlockDevice
+
 func linuxDVDLabel(device string) string {
 	canonical, _ := filepath.EvalSymlinks(device)
 	if canonical == "" {
@@ -52,7 +54,7 @@ func resolvePhysicalDVDDrive(raw string) (dvdDrive, bool, error) {
 	if err != nil {
 		resolved = p
 	}
-	if !linuxOpticalBlockDevice(resolved) {
+	if !linuxOpticalDevice(resolved) {
 		return dvdDrive{}, false, nil
 	}
 	return dvdDrive{Input: resolved, Label: linuxDVDLabel(resolved), BaseName: "DVD-" + filepath.Base(resolved)}, true, nil
@@ -66,7 +68,7 @@ func platformDVDDrives() ([]dvdDrive, error) {
 	var drives []dvdDrive
 	for _, entry := range entries {
 		device := filepath.Join("/dev", entry.Name())
-		if linuxOpticalBlockDevice(device) {
+		if linuxOpticalDevice(device) {
 			drives = append(drives, dvdDrive{Input: device, Label: linuxDVDLabel(device), BaseName: "DVD-" + filepath.Base(device)})
 		}
 	}
