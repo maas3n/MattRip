@@ -1,6 +1,6 @@
 #define MyAppName "MattRip"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.2.0"
+  #define MyAppVersion "0.0.0"
 #endif
 #define MyAppExeName "MattRip.exe"
 
