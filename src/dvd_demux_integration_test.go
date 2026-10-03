@@ -13,7 +13,7 @@ import (
 
 // The fixture is authored with make-dvd-demux-fixture.py, never parsed here.
 func TestAuthoredDVDTabDemux(t *testing.T) {
-	folder := os.Getenv("MATTMUX_TEST_DEMUX_DVD")
+	folder := os.Getenv("MATTRIP_TEST_DEMUX_DVD")
 	if folder == "" {
 		t.Skip("authored subtitled DVD fixture not supplied")
 	}
@@ -27,7 +27,7 @@ func TestAuthoredDVDTabDemux(t *testing.T) {
 	}
 	tools := toolPaths{ffmpeg: ffmpeg, ffprobe: ffprobe}
 	sources := []string{folder}
-	if iso := os.Getenv("MATTMUX_TEST_DEMUX_ISO"); iso != "" {
+	if iso := os.Getenv("MATTRIP_TEST_DEMUX_ISO"); iso != "" {
 		sources = append(sources, iso)
 	}
 	for _, source := range sources {
