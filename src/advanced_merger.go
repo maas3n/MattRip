@@ -23,38 +23,44 @@ func probeMergerFile(ctx context.Context, probe, path, kind string) ([]mergerStr
 	if kind != "all" && kind != "video" && kind != "audio" && kind != "subtitle" {
 		return nil, errors.New("invalid stream category")
 	}
-	abs, err := filepath.Abs(path)
-	if err != nil {
-		return nil, err
-	}
-	st, err := os.Stat(abs)
-	if err != nil {
-		return nil, err
-	}
-	if !st.Mode().IsRegular() {
-		return nil, errors.New("choose a regular media file")
-	}
-	title := 0
+
 	args := []string{"-v", "error", "-show_streams", "-show_chapters", "-of", "json"}
-	if strings.EqualFold(filepath.Ext(abs), ".iso") {
-		tools, e := desktopCLITools(ctx, false)
-		if e != nil {
-			return nil, e
+	title := 0
+	inputPath := ""
+
+	if source, sourceErr := resolveDVDSource(path); sourceErr == nil {
+		inputPath = source.Input
+		tools, err := desktopCLITools(ctx, false)
+		if err != nil {
+			return nil, err
 		}
 		probe = tools.ffprobe
-		titles, e := batchPlatformDeps().discoverDVDTitlesViaDVDVideo(ctx, abs, tools, func(float64, string) {})
-		if e != nil {
-			return nil, e
+		titles, err := batchPlatformDeps().discoverDVDTitlesViaDVDVideo(ctx, inputPath, tools, func(float64, string) {})
+		if err != nil {
+			return nil, err
 		}
-		best, e := longestTitle(titles)
-		if e != nil {
-			return nil, e
+		best, err := longestTitle(titles)
+		if err != nil {
+			return nil, err
 		}
 		title = best.Number
-		args = appendDesktopDVDInput(args, title, abs)
+		args = appendDesktopDVDInput(args, title, inputPath)
 	} else {
+		abs, err := filepath.Abs(path)
+		if err != nil {
+			return nil, err
+		}
+		st, err := os.Stat(abs)
+		if err != nil {
+			return nil, err
+		}
+		if !st.Mode().IsRegular() {
+			return nil, errors.New("choose a regular media file or DVD source")
+		}
+		inputPath = abs
 		args = append(args, abs)
 	}
+
 	data, err := runMergerCommand(ctx, probe, args...)
 	if err != nil {
 		return nil, err
@@ -72,7 +78,7 @@ func probeMergerFile(ctx context.Context, probe, path, kind string) ([]mergerStr
 		if t.Kind == "attachment" && t.Title == "" {
 			t.Title = raw.Tags["filename"]
 		}
-		streams = append(streams, mergerStream{abs, t})
+		streams = append(streams, mergerStream{inputPath, t})
 	}
 	if kind == "all" {
 		var chapters ffprobeChapterResult
@@ -80,11 +86,11 @@ func probeMergerFile(ctx context.Context, probe, path, kind string) ([]mergerStr
 			return nil, err
 		}
 		if len(chapters.Chapters) > 0 {
-			streams = append(streams, mergerStream{abs, trackOption{DVDTitle: title, Index: -1, Kind: "chapters", Title: fmt.Sprintf("%d chapters", len(chapters.Chapters))}})
+			streams = append(streams, mergerStream{inputPath, trackOption{DVDTitle: title, Index: -1, Kind: "chapters", Title: fmt.Sprintf("%d chapters", len(chapters.Chapters))}})
 		}
 	}
 	if len(streams) == 0 {
-		return nil, fmt.Errorf("%s contains no %s streams", filepath.Base(abs), kind)
+		return nil, fmt.Errorf("%s contains no %s streams", dvdSourceDisplayName(inputPath), kind)
 	}
 	return streams, nil
 }
