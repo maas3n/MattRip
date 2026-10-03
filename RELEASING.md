@@ -100,4 +100,4 @@ The repository was forked from the verified MattMux 1.4.19 source baseline. Any 
 
 ## Emergency fixes
 
-If a published unified release is defective, leave its tag and assets unchanged, fix the problem on `main`, and publish the next product version (for example `v1.4.1`). Never rebuild an old release in place.
+If a published unified release is defective, leave its tag and assets unchanged, fix the problem on `main`, and publish the next unused MattRip product version. Never rebuild an old release in place.
