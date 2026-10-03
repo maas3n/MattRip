@@ -80,7 +80,7 @@ func demuxMerger(ctx context.Context, tools toolPaths, selected []mergerStream, 
 			g.media = append(g.media, s)
 			mediaCount++
 		default:
-			return "", fmt.Errorf("DEMUX supports video, audio and subtitle streams; deselect %s from %s", s.Track.Kind, filepath.Base(s.Path))
+			return "", fmt.Errorf("DEMUX supports video, audio and subtitle streams; deselect %s from %s", s.Track.Kind, dvdSourceDisplayName(s.Path))
 		}
 	}
 	if mediaCount == 0 {
@@ -88,7 +88,7 @@ func demuxMerger(ctx context.Context, tools toolPaths, selected []mergerStream, 
 	}
 	for _, g := range groups {
 		if g.chapters && len(g.media) == 0 {
-			return "", fmt.Errorf("select at least one media stream from %s to demux its chapters", filepath.Base(g.path))
+			return "", fmt.Errorf("select at least one media stream from %s to demux its chapters", dvdSourceDisplayName(g.path))
 		}
 	}
 	for _, g := range groups {
@@ -137,6 +137,9 @@ func demuxMerger(ctx context.Context, tools toolPaths, selected []mergerStream, 
 			}
 		}
 		stem := strings.TrimSuffix(filepath.Base(g.path), filepath.Ext(g.path))
+		if g.title > 0 {
+			stem = dvdSourceBaseName(g.path)
+		}
 		stem = sanitizeFilename(stem)
 		if stem == "" {
 			stem = "source"
