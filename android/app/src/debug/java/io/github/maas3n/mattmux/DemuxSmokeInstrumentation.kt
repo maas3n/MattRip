@@ -75,7 +75,7 @@ class DemuxSmokeInstrumentation : Instrumentation() {
                         val idx = files.single { it.extension == "idx" }.readText()
                         check(idx.contains("size: 720x576") && idx.contains("palette:") && idx.contains("timestamp:")) { "Invalid DVD subtitle index: $idx" }
                         check(files.all { it.length() > 0 })
-                        android.util.Log.i("MattMuxDemuxTest", "DVD SAF export completed: vob=$vob files=${files.map { it.name }}")
+                        android.util.Log.i("MattRipDemuxTest", "DVD SAF export completed: vob=$vob files=${files.map { it.name }}")
                     } finally { engine.destroy() }
                 }
             }
@@ -110,10 +110,10 @@ class DemuxSmokeInstrumentation : Instrumentation() {
                     if (!finished) android.os.SystemClock.sleep(50)
                 }
                 check(finished && message.startsWith("Demux complete:")) { "DVD tab did not complete: $message" }
-                android.util.Log.i("MattMuxDemuxTest", "DVD tab completion verified: $message")
+                android.util.Log.i("MattRipDemuxTest", "DVD tab completion verified: $message")
             } finally { runOnMainSync { activity.finish() } }
             safRoot.deleteRecursively()
-            result.putString("stream", "MATTMUX_DEMUX_SMOKE_PASS")
+            result.putString("stream", "MATTRIP_DEMUX_SMOKE_PASS")
             finish(Activity.RESULT_OK, result)
         } catch (error: Throwable) {
             result.putString("stream", error.stackTraceToString())
