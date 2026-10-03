@@ -6,11 +6,11 @@ MattRip can remux DVD-Video titles to MKV, extract individual streams from DVD o
 
 > Windows and Linux now accept **physical DVD drives** as desktop DVD sources in DVD Remux/Demux, Advanced Merger, and the single-disc CLI. CSS handling is **not included yet**, and Android USB optical-drive support remains a separate milestone.
 
-## Development status
+## Latest stable release: MattRip 1.5.0
 
-MattRip is under active development and does not have a public MattRip release yet. The fork starts from the verified MattMux 1.4.19 source baseline at commit `a794b451e454d7e0343cf5ba00ab200080e8e60b` and keeps the existing cross-platform behavior while MattRip-specific features are developed.
+MattRip 1.5.0 is the first public MattRip release. It starts from the verified MattMux 1.4.19 source baseline at commit `a794b451e454d7e0343cf5ba00ab200080e8e60b`, establishes MattRip's separate product identity, and adds the shared desktop DVDSource foundation with Windows/Linux physical DVD-drive input.
 
-The first cleanup work intentionally separates MattRip's product identity from MattMux without changing the media engine behavior.
+Release downloads and checksums are published together on the [MattRip 1.5.0 release page](https://github.com/maas3n/MattRip/releases/tag/v1.5.0).
 
 
 ## What MattRip can do
