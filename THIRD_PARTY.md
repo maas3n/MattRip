@@ -2,7 +2,7 @@
 
 MattRip relies on FFmpeg/FFprobe and MediaInfo on desktop platforms. Their source or binary distributions are not committed to the normal repository history. Self-contained release packages download/build the pinned versions during CI, verify them, and then bundle the resulting runtime privately with MattRip.
 
-## Windows 1.2.0
+## Inherited MattMux Windows 1.2.0 provenance
 
 ### FFmpeg / FFprobe
 
@@ -23,7 +23,7 @@ MattRip verifies the pinned checksum manifest first, then verifies the FFmpeg ar
 
 The Windows Setup EXE, Portable ZIP, and All-in-One EXE bundle these verified runtime tools for normal offline-capable use.
 
-## Linux 1.3.0-dev5
+## Inherited MattMux Linux 1.3.0-dev5 provenance
 
 ### FFmpeg / FFprobe
 
@@ -46,7 +46,7 @@ Linux MediaInfo is built from an exact pinned source set rather than from moving
 
 The self-contained Linux packages keep the resulting MediaInfo binary private to MattRip and do not replace `/usr/bin/mediainfo`.
 
-## Android / ChromeOS Alpha 4
+## Inherited MattMux Android / ChromeOS Alpha 4 provenance
 
 The Android/ChromeOS app uses native FFmpeg libraries, libudfread, and the DVD title-discovery pair proven by the 1.4.2 DVDNav Beta 1.
 
