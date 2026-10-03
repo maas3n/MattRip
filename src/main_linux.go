@@ -34,7 +34,7 @@ type linuxGUI struct {
 	preserve                                                                   *widget.Check
 	progress                                                                   *widget.ProgressBar
 	status, trackSummary                                                       *widget.Label
-	scanBtn, metaBtn, remuxBtn, demuxBtn, cancelBtn, dvdBtn, isoBtn, outputBtn *widget.Button
+	scanBtn, metaBtn, remuxBtn, demuxBtn, cancelBtn, dvdBtn, isoBtn, driveBtn, outputBtn *widget.Button
 	mu                                                                         sync.Mutex
 	busy                                                                       bool
 	cancel                                                                     context.CancelFunc
@@ -80,7 +80,7 @@ func (g *linuxGUI) build() {
 		s.OutputDir = defaultLinuxOutputDir()
 	}
 	g.sourceEntry = widget.NewEntry()
-	g.sourceEntry.SetPlaceHolder("/path/to/DVD, VIDEO_TS, or disc.iso")
+	g.sourceEntry.SetPlaceHolder("/path/to/DVD, disc.iso, or /dev/sr0")
 	g.outputEntry = widget.NewEntry()
 	g.outputEntry.SetText(s.OutputDir)
 	g.titleSelect = widget.NewSelect(nil, func(string) { g.clearTrackSelection() })
@@ -94,6 +94,7 @@ func (g *linuxGUI) build() {
 	g.status.Wrapping = fyne.TextWrapWord
 	g.dvdBtn = widget.NewButton("DVD Folder…", g.chooseDVDFolder)
 	g.isoBtn = widget.NewButton("ISO / MKV File…", g.chooseISO)
+	g.driveBtn = widget.NewButton("DVD Drive…", g.chooseDVDDrive)
 	g.outputBtn = widget.NewButton("Browse…", g.chooseOutput)
 	g.scanBtn = widget.NewButton("Scan Titles", func() { g.startAsync("Scanning DVD titles…", g.scan) })
 	g.metaBtn = widget.NewButton("Show Metadata", func() { g.startAsync("Reading title metadata…", g.showMetadata) })
@@ -106,13 +107,13 @@ func (g *linuxGUI) build() {
 	g.sourceEntry.OnChanged = func(string) { g.invalidateTitles() }
 	g.outputEntry.OnChanged = func(string) { g.saveSettings() }
 	header := container.NewVBox(widget.NewLabelWithStyle("MattRip", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), widget.NewLabel("Lossless DVD title remuxing to Matroska — video, audio, subtitles, chapters and metadata."))
-	sourceRow := container.NewBorder(nil, nil, nil, container.NewHBox(g.dvdBtn, g.isoBtn), g.sourceEntry)
+	sourceRow := container.NewBorder(nil, nil, nil, container.NewHBox(g.dvdBtn, g.isoBtn, g.driveBtn), g.sourceEntry)
 	outputRow := container.NewBorder(nil, nil, nil, g.outputBtn, g.outputEntry)
 	titleRow := container.NewBorder(nil, nil, nil, container.NewHBox(g.scanBtn, g.metaBtn, aboutBtn), g.titleSelect)
 	timestampNotice := widget.NewLabel("Remux uses fixed timestamps (-fflags +genpts).")
 	timestampNotice.Wrapping = fyne.TextWrapWord
 	actions := container.NewHBox(layout.NewSpacer(), g.remuxBtn, g.demuxBtn, g.cancelBtn)
-	dvdTab := container.NewPadded(container.NewVBox(header, widget.NewSeparator(), widget.NewLabelWithStyle("Source", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), sourceRow, widget.NewLabel("Choose a DVD folder / VIDEO_TS structure, ISO image, or MKV file."), widget.NewSeparator(), widget.NewLabelWithStyle("Destination", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), outputRow, widget.NewSeparator(), widget.NewLabelWithStyle("DVD Title", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), titleRow, g.trackSummary, g.preserve, widget.NewSeparator(), g.progress, g.status, layout.NewSpacer(), timestampNotice, actions))
+	dvdTab := container.NewPadded(container.NewVBox(header, widget.NewSeparator(), widget.NewLabelWithStyle("Source", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), sourceRow, widget.NewLabel("Choose a DVD folder / VIDEO_TS structure, ISO image, MKV file, or physical DVD drive."), widget.NewSeparator(), widget.NewLabelWithStyle("Destination", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), outputRow, widget.NewSeparator(), widget.NewLabelWithStyle("DVD Title", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), titleRow, g.trackSummary, g.preserve, widget.NewSeparator(), g.progress, g.status, layout.NewSpacer(), timestampNotice, actions))
 	g.window.SetContent(container.NewAppTabs(container.NewTabItem("DVD Remux", dvdTab), container.NewTabItem("Advanced Merger", g.buildAdvancedMerger()), container.NewTabItem("BATCH", g.buildBatch()), container.NewTabItem("CLI", g.buildCLI())))
 }
 
@@ -128,6 +129,36 @@ func (g *linuxGUI) chooseDVDFolder() {
 	}, g.window)
 	d.Show()
 }
+func (g *linuxGUI) chooseDVDDrive() {
+	drives, err := listPhysicalDVDDrives()
+	if err != nil {
+		g.showError(err)
+		return
+	}
+	if len(drives) == 0 {
+		dialog.ShowInformation("DVD Drive", "No physical optical DVD/CD-ROM drive was detected.", g.window)
+		return
+	}
+	options := make([]string, 0, len(drives))
+	byLabel := make(map[string]string, len(drives))
+	for _, drive := range drives {
+		label := drive.Label + " — " + drive.Input
+		options = append(options, label)
+		byLabel[label] = drive.Input
+	}
+	selected := options[0]
+	picker := widget.NewSelect(options, func(value string) { selected = value })
+	picker.SetSelected(selected)
+	dialog.NewCustomConfirm("Choose DVD Drive", "Use Drive", "Cancel", container.NewVBox(
+		widget.NewLabel("Select the physical DVD drive to scan through FFmpeg dvdvideo/libdvdread/libdvdnav."),
+		picker,
+	), func(ok bool) {
+		if ok {
+			g.sourceEntry.SetText(byLabel[selected])
+		}
+	}, g.window).Show()
+}
+
 func (g *linuxGUI) chooseISO() {
 	d := dialog.NewFileOpen(func(r fyne.URIReadCloser, err error) {
 		if err != nil {
@@ -198,7 +229,7 @@ func (g *linuxGUI) setBusy(b bool) {
 	controls := []interface {
 		Disable()
 		Enable()
-	}{g.sourceEntry, g.outputEntry, g.titleSelect, g.preserve, g.scanBtn, g.metaBtn, g.remuxBtn, g.demuxBtn, g.dvdBtn, g.isoBtn, g.outputBtn}
+	}{g.sourceEntry, g.outputEntry, g.titleSelect, g.preserve, g.scanBtn, g.metaBtn, g.remuxBtn, g.demuxBtn, g.dvdBtn, g.isoBtn, g.driveBtn, g.outputBtn}
 	for _, c := range controls {
 		if b {
 			c.Disable()

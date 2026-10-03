@@ -144,7 +144,7 @@ func (g *linuxGUI) buildAdvancedMerger() fyne.CanvasObject {
 							continue
 						}
 						streams = append(streams, s)
-						check := widget.NewCheck(filepath.Base(s.Path)+" — "+s.Track.Label(), nil)
+						check := widget.NewCheck(dvdSourceDisplayName(s.Path)+" — "+s.Track.Label(), nil)
 						check.SetChecked(true)
 						checks = append(checks, check)
 						controls = append(controls, check)
@@ -157,9 +157,69 @@ func (g *linuxGUI) buildAdvancedMerger() fyne.CanvasObject {
 		d.Resize(fyne.NewSize(680, 460))
 		d.Show()
 	}
-	movies := widget.NewButton("CHOOSE MOVIE FILES", func() { add("all") })
-	audio := widget.NewButton("CHOOSE AUDIO STREAMS FROM MKV or RAW", func() { add("audio") })
-	subs := widget.NewButton("CHOOSE SUBTITLE STREAMS FROM MKV or RAW", func() { add("subtitle") })
+	movies := widget.NewButton("MOVIE FILES", func() { add("all") })
+	drive := widget.NewButton("DVD DRIVE", func() {
+		drives, err := listPhysicalDVDDrives()
+		if err != nil {
+			dialog.ShowError(err, g.window)
+			return
+		}
+		if len(drives) == 0 {
+			dialog.ShowInformation("DVD Drive", "No physical optical DVD/CD-ROM drive was detected.", g.window)
+			return
+		}
+		options := make([]string, 0, len(drives))
+		byLabel := make(map[string]string, len(drives))
+		for _, dvd := range drives {
+			label := dvd.Label + " — " + dvd.Input
+			options = append(options, label)
+			byLabel[label] = dvd.Input
+		}
+		selected := options[0]
+		picker := widget.NewSelect(options, func(value string) { selected = value })
+		picker.SetSelected(selected)
+		dialog.NewCustomConfirm("Choose DVD Drive", "Add DVD", "Cancel", container.NewVBox(
+			widget.NewLabel("The longest readable DVD title will be added as selectable streams."),
+			picker,
+		), func(ok bool) {
+			if !ok {
+				return
+			}
+			path := byLabel[selected]
+			run("Reading DVD streams…", func(ctx context.Context) (func(), error) {
+				tools, err := mergerTools(ctx)
+				if err != nil {
+					return nil, err
+				}
+				added, err := probeMergerFile(ctx, tools.ffprobe, path, "all")
+				if err != nil {
+					return nil, err
+				}
+				return func() {
+					for _, s := range added {
+						duplicate := false
+						for _, existing := range streams {
+							if existing.Path == s.Path && existing.Track.Index == s.Track.Index {
+								duplicate = true
+							}
+						}
+						if duplicate {
+							continue
+						}
+						streams = append(streams, s)
+						check := widget.NewCheck(dvdSourceDisplayName(s.Path)+" — "+s.Track.Label(), nil)
+						check.SetChecked(true)
+						checks = append(checks, check)
+						controls = append(controls, check)
+						list.Add(check)
+					}
+					status.SetText(fmt.Sprintf("%d streams available", len(streams)))
+				}, nil
+			})
+		}, g.window).Show()
+	})
+	audio := widget.NewButton("AUDIO / MKV / RAW", func() { add("audio") })
+	subs := widget.NewButton("SUBTITLE / MKV / RAW", func() { add("subtitle") })
 	chapters := widget.NewButton("CHOOSE CHAPTER FILE FROM MKV or RAW", func() {
 		dialog.ShowFileOpen(func(r fyne.URIReadCloser, err error) {
 			if err != nil {
@@ -266,8 +326,8 @@ func (g *linuxGUI) buildAdvancedMerger() fyne.CanvasObject {
 		list.Refresh()
 		status.SetText("Choose files to add streams.")
 	})
-	controls = []fyne.Disableable{movies, audio, subs, chapters, folder, demux, mux, clear, chapter, output, name}
+	controls = []fyne.Disableable{movies, drive, audio, subs, chapters, folder, demux, mux, clear, chapter, output, name}
 	baseControlCount = len(controls)
 	scroll := container.NewVScroll(list)
-	return container.NewBorder(container.NewVBox(container.NewVBox(movies, audio, subs), widget.NewLabel("Select Streams — choose one chapter set, or use the chapter override below")), container.NewVBox(clear, container.NewBorder(nil, nil, nil, chapters, chapter), container.NewBorder(nil, nil, nil, folder, output), container.NewBorder(nil, nil, widget.NewLabel("Output filename"), nil, name), status, activity, container.NewHBox(demux, mux, cancelBtn)), nil, nil, scroll)
+	return container.NewBorder(container.NewVBox(container.NewHBox(movies, drive, audio, subs), widget.NewLabel("Select Streams — choose one chapter set, or use the chapter override below")), container.NewVBox(clear, container.NewBorder(nil, nil, nil, chapters, chapter), container.NewBorder(nil, nil, nil, folder, output), container.NewBorder(nil, nil, widget.NewLabel("Output filename"), nil, name), status, activity, container.NewHBox(demux, mux, cancelBtn)), nil, nil, scroll)
 }

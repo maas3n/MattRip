@@ -18,10 +18,11 @@ func isMKVSource(path string) bool { return strings.EqualFold(filepath.Ext(path)
 
 // The GUI accepts MKV; DVD-only batch discovery and CLI normalization stay separate.
 func normalizeTabSource(path string) (string, error) {
-	path = filepath.Clean(strings.TrimSpace(strings.Trim(path, "\"")))
+	path = strings.TrimSpace(strings.Trim(path, "\""))
 	if !isMKVSource(path) {
 		return normalizeSource(path)
 	}
+	path = filepath.Clean(path)
 	st, err := os.Stat(path)
 	if err != nil {
 		return "", err
@@ -205,7 +206,7 @@ func demuxTab(ctx context.Context, tools toolPaths, source string, title int, ou
 	}
 	base := strings.TrimSuffix(filepath.Base(source), filepath.Ext(source))
 	if !isMKVSource(source) {
-		base += fmt.Sprintf("-title-%02d", title)
+		base = dvdSourceBaseName(source) + fmt.Sprintf("-title-%02d", title)
 	}
 	// Reserve a new output directory; never overwrite a previous export.
 	final, err = os.MkdirTemp(output, base+"-demux-")

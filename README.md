@@ -4,7 +4,7 @@
 
 MattRip can remux DVD-Video titles to MKV, extract individual streams from DVD or MKV sources, combine selected streams from multiple files, and batch-remux DVD libraries. Windows, Linux, and Android/ChromeOS are developed together from the single `main` branch and use one shared product version.
 
-> The current MattRip baseline does **not yet** add CSS handling or physical-drive input. Those are planned fork features; this rebrand/cleanup change does not alter media access behavior.
+> Windows and Linux now accept **physical DVD drives** as desktop DVD sources in DVD Remux/Demux, Advanced Merger, and the single-disc CLI. CSS handling is **not included yet**, and Android USB optical-drive support remains a separate milestone.
 
 ## Development status
 
@@ -21,6 +21,7 @@ The main **DVD Remux** tab accepts:
 
 - DVD folders and `VIDEO_TS`
 - unmounted DVD ISO images
+- physical DVD drives on Windows/Linux (`D:`-style drive sources on Windows and `/dev/sr0`-style devices on Linux)
 - MKV files
 
 For DVD sources, MattRip discovers DVD titles, automatically selects the longest readable title, and lets you inspect metadata before processing. Video, audio, and subtitle streams are individually selectable. All detected streams are selected by default.
@@ -31,7 +32,7 @@ Windows and Linux use FFmpeg's `dvdvideo` input backed by `libdvdread`/`libdvdna
 
 ### Demux
 
-The **Demux** action in the DVD Remux tab extracts selected streams without re-encoding. It works with DVD folders, DVD ISOs, and MKV sources on Windows, Linux, and Android/ChromeOS.
+The **Demux** action in the DVD Remux tab extracts selected streams without re-encoding. It works with DVD folders, DVD ISOs, and MKV sources on all supported platforms, plus physical DVD drives on Windows/Linux.
 
 Depending on the selected streams, MattRip can export:
 
@@ -54,18 +55,19 @@ Android/ChromeOS temporarily holds exported files while saving them through the 
 
 The **Advanced Merger** combines selected streams from multiple sources into one MKV without transcoding.
 
-Inputs include normal containers such as MKV, MP4 and AVI, DVD ISOs, and supported elementary streams such as H.264, MPEG-2/VOB, AAC, AC-3, MP3, DTS, SRT, WebVTT and SUP.
+Inputs include normal containers such as MKV, MP4 and AVI, DVD ISOs, **physical DVD drives on Windows/Linux**, and supported elementary streams such as H.264, MPEG-2/VOB, AAC, AC-3, MP3, DTS, SRT, WebVTT and SUP.
 
-- **CHOOSE MOVIE FILES** exposes discovered video, audio, subtitle, attachment/data streams and embedded chapters.
-- **CHOOSE AUDIO FILES FROM MKV or RAW** exposes audio streams.
-- **CHOOSE SUBTITLE FILES FROM MKV or RAW** exposes subtitle streams.
+- **MOVIE FILES** exposes discovered video, audio, subtitle, attachment/data streams and embedded chapters.
+- **DVD DRIVE** adds the longest readable title from a physical desktop DVD drive.
+- **AUDIO / MKV / RAW** exposes audio streams.
+- **SUBTITLE / MKV / RAW** exposes subtitle streams.
 - **CHOOSE CHAPTER FILE FROM MKV or RAW** accepts chapters from MKV or valid `FFMETADATA1`.
 
 Streams are explicitly selectable. Embedded chapter titles are preserved, and a dedicated chapter source overrides selected embedded chapters.
 
 Advanced Merger also has a **DEMUX** action. Tick or untick the rows you want, then demux only the selected video, audio, and subtitle streams; a checked embedded chapter row exports `Chapters.txt`. Multiple inputs can be demuxed in one operation, with source-prefixed output names to avoid collisions. MPEG-2 video can be exported either as elementary `.mpeg2` or as video-only `.VOB`, matching the main Demux workflow.
 
-DVD ISO input uses the longest DVD title and keeps that title through stream selection and muxing. Windows/Linux Advanced Merger DEMUX reads DVD selections directly through `dvdvideo`. Android/ChromeOS maps the selected staged merger rows back to the original DVD stream indexes and performs DEMUX directly from the original DVD source rather than from the temporary MKV used for the MUX workflow. Android/ChromeOS stages Storage Access Framework documents as needed; paired VobSub input requires both the matching `.idx` and `.sub` files.
+DVD ISO and physical-drive input use the longest readable DVD title and keep that title through stream selection and muxing. Windows/Linux Advanced Merger DEMUX reads DVD selections directly through `dvdvideo`. Android/ChromeOS maps the selected staged merger rows back to the original DVD stream indexes and performs DEMUX directly from the original DVD source rather than from the temporary MKV used for the MUX workflow. Android/ChromeOS stages Storage Access Framework documents as needed; paired VobSub input requires both the matching `.idx` and `.sub` files.
 
 See [`docs/ADVANCED_MERGER.md`](docs/ADVANCED_MERGER.md) for details.
 
@@ -103,12 +105,14 @@ remux
 --batch
 ```
 
-Single-disc remuxing supports options including `--title`, `--streams 0,2`, `--no-chapters`, and `--output`. Windows Setup/Portable packages include `mattrip-cli.exe`; Linux packages include `mattrip-cli`, and the Linux Standalone accepts CLI commands directly or after `--cli`.
+Single-disc remuxing supports options including `--title`, `--streams 0,2`, `--no-chapters`, and `--output`. The source can be a DVD folder, ISO image, or physical DVD device such as `D:` on Windows or `/dev/sr0` on Linux. Physical drives require an explicit `--output` because there is no writable folder beside the disc. Windows Setup/Portable packages include `mattrip-cli.exe`; Linux packages include `mattrip-cli`, and the Linux Standalone accepts CLI commands directly or after `--cli`.
 
 Example:
 
 ```bash
 mattrip-cli remux --title 1 --streams 0,2 /path/to/DVD-or.iso
+mattrip-cli remux --output /path/to/output D:
+mattrip-cli remux --output /path/to/output /dev/sr0
 mattrip-cli --batch --log=/path/to/mattrip-batch.log /path/to/Movies /path/to/output
 ```
 
@@ -176,7 +180,7 @@ See [`android/README.md`](android/README.md) for Android-specific implementation
 
 ## Important limitations
 
-- The current MattRip baseline does not decrypt CSS or other protected DVD content; CSS-capable DVD access is planned fork work, not part of this cleanup.
+- Physical DVD-drive access currently handles readable/unencrypted discs through the existing desktop `dvdvideo` stack. CSS-capable access is planned source-layer work and is not included yet.
 - Interleaved multi-angle DVD titles are unsupported on the current Android path.
 - Still/shuffle/multi-PGC DVD semantics are not fully supported on Android.
 - Android ISO input requires a seekable storage provider.

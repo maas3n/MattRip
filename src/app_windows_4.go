@@ -139,32 +139,11 @@ func runHidden(ctx context.Context, path string, args ...string) ([]byte, error)
 }
 
 func normalizeSource(p string) (string, error) {
-	p = filepath.Clean(strings.TrimSpace(strings.Trim(p, "\"")))
-	if p == "." || p == "" {
-		return "", errors.New("choose a DVD folder, VIDEO_TS folder, or ISO file")
-	}
-	info, err := os.Stat(p)
+	src, err := resolveDVDSource(p)
 	if err != nil {
-		return "", fmt.Errorf("source does not exist: %s", p)
+		return "", err
 	}
-	if !info.IsDir() {
-		if strings.EqualFold(filepath.Ext(p), ".iso") {
-			return p, nil
-		}
-		return "", errors.New("source file must be a DVD ISO (.iso)")
-	}
-	if strings.EqualFold(filepath.Base(p), "VIDEO_TS") {
-		if fileExists(filepath.Join(p, "VIDEO_TS.IFO")) {
-			return filepath.Dir(p), nil
-		}
-	}
-	if fileExists(filepath.Join(p, "VIDEO_TS", "VIDEO_TS.IFO")) {
-		return p, nil
-	}
-	if fileExists(filepath.Join(p, "VIDEO_TS.IFO")) {
-		return filepath.Dir(p), nil
-	}
-	return "", errors.New("the selected folder does not contain a VIDEO_TS DVD structure")
+	return src.Input, nil
 }
 
 func currentSource() (string, error) { return normalizeTabSource(getText(app.sourceEdit)) }
@@ -225,14 +204,7 @@ func isWithin(path, root string) bool {
 	return p == r || strings.HasPrefix(p, r+string(os.PathSeparator))
 }
 func outputPath(src, outDir string, title int) string {
-	base := filepath.Base(src)
-	if strings.EqualFold(filepath.Ext(base), ".iso") {
-		base = strings.TrimSuffix(base, filepath.Ext(base))
-	}
-	if strings.EqualFold(base, "VIDEO_TS") {
-		base = filepath.Base(filepath.Dir(src))
-	}
-	base = sanitizeFilename(base)
+	base := sanitizeFilename(dvdSourceBaseName(src))
 	if base == "" {
 		base = "DVD"
 	}
@@ -258,16 +230,5 @@ func sanitizeFilename(s string) string {
 	return s
 }
 func mediaInfoTarget(src string) string {
-	info, err := os.Stat(src)
-	if err != nil {
-		return ""
-	}
-	if !info.IsDir() {
-		return src
-	}
-	p := filepath.Join(src, "VIDEO_TS", "VIDEO_TS.IFO")
-	if fileExists(p) {
-		return p
-	}
-	return ""
+	return dvdSourceMediaInfoTarget(src)
 }

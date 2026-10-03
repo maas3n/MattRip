@@ -59,7 +59,7 @@ Usage:
   mattrip-cli --batch [--log FILE] MOVIES_ROOT [OUTPUT_ROOT]
   mattrip-cli --version
 
-SOURCE may be a DVD directory/VIDEO_TS structure or an ISO image.
+SOURCE may be a DVD directory/VIDEO_TS structure, ISO image, or physical DVD drive (for example D: or /dev/sr0).
 If --title is omitted, MattRip scans the disc and selects the longest title.
 
 Batch mode accepts movie folders with VIDEO_TS subfolders and unmounted .iso files.
