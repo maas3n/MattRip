@@ -1,0 +1,114 @@
+name: Publish MattRip v1.5.0 desktop release
+
+on:
+  push:
+    branches:
+      - release/v1.5.0-desktop-publish
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v4
+        with:
+          ref: v1.5.0
+          fetch-depth: 0
+
+      - name: Download verified Windows and Linux release artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          run_id='37160616184'
+          rm -rf work release-assets
+          mkdir -p work/windows work/linux release-assets
+
+          gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name release-windows --dir work/windows
+          gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name release-linux --dir work/linux
+
+          find work/windows -type f -maxdepth 1 -exec cp -f {} release-assets/ \;
+          find work/linux -type f -maxdepth 1 -exec cp -f {} release-assets/ \;
+
+      - name: Add project provenance and combined checksums
+        run: |
+          set -euo pipefail
+          cp THIRD_PARTY.md release-assets/MattRip-1.5.0-THIRD-PARTY.md
+
+          required=(
+            MattRip-1.5.0-Windows-Setup.exe
+            MattRip-1.5.0-Windows-All-in-One.exe
+            MattRip-1.5.0-Windows-Portable.zip
+            SHA256SUMS-Windows.txt
+            MattRip-1.5.0-Linux-amd64.deb
+            MattRip-1.5.0-Linux-amd64.tar.gz
+            MattRip-1.5.0-Linux-amd64Standalone
+            SHA256SUMS-Linux.txt
+            MattRip-1.5.0-THIRD-PARTY.md
+          )
+          for asset in "${required[@]}"; do
+            test -s "release-assets/$asset" || {
+              echo "Missing or empty release asset: $asset" >&2
+              ls -la release-assets >&2
+              exit 1
+            }
+          done
+
+          (
+            cd release-assets
+            find . -maxdepth 1 -type f ! -name SHA256SUMS.txt -print0 \
+              | sort -z \
+              | xargs -0 sha256sum > SHA256SUMS.txt
+            sha256sum -c SHA256SUMS.txt
+          )
+
+      - name: Refuse to overwrite an existing release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git rev-parse --verify 'refs/tags/v1.5.0^{commit}' >/dev/null
+          test "$(git rev-parse 'refs/tags/v1.5.0^{commit}')" = 'c7eb6d577f9d8a67e6989a32fb4e4feae0e5cba7'
+          if gh release view v1.5.0 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo 'Release v1.5.0 already exists; refusing to overwrite it.' >&2
+            exit 1
+          fi
+
+      - name: Write release notes
+        run: |
+          cat > release-notes.md <<'EOF'
+          # MattRip 1.5.0
+
+          MattRip 1.5.0 is the first public MattRip release, based on the verified MattMux 1.4.19 source baseline.
+
+          Highlights:
+          - Separate MattRip product identity across Windows, Linux, Android source/build metadata, CLI, packaging, caches, installer and release tooling.
+          - Shared desktop DVDSource foundation for VIDEO_TS folders, DVD ISO images and physical optical drives.
+          - Physical DVD-drive input on Windows and Linux in DVD Remux/Demux and Advanced Merger.
+          - Desktop CLI scan, metadata and remux support for physical DVD devices.
+          - DVD inputs preserve the required 100M analyzeduration / 100M probesize / +genpts policy.
+          - Advanced Merger applies the DVD-specific probe policy only to DVD inputs in mixed jobs.
+
+          Windows and Linux packages in this release were built and validated from the exact v1.5.0 tag. The tagged CI passed the Windows release build and Linux package/standalone validation.
+
+          ## Android / ChromeOS
+
+          No Android APK is included in v1.5.0. MattRip uses a new Android application ID and requires its own persistent distribution signing identity. The release workflow correctly refused to publish an APK because the MattRip Android signing secrets are not configured. A debug-signed or throwaway-key APK is intentionally not being published.
+
+          ## DVD protection and physical-drive validation
+
+          CSS/decryption is not included yet. Physical-drive support targets readable/unencrypted DVD-Video media through FFmpeg dvdvideo + libdvdread/libdvdnav. Automated tests cover DVDSource classification plus existing VIDEO_TS/ISO parity, but GitHub-hosted runners do not provide real optical hardware, so real-drive hardware validation remains recommended.
+
+          Published assets are immutable. Android/ChromeOS will be included in a future MattRip version after persistent signing is configured and validated.
+          EOF
+
+      - name: Publish public GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create v1.5.0             release-assets/*             --repo "$GITHUB_REPOSITORY"             --verify-tag             --target c7eb6d577f9d8a67e6989a32fb4e4feae0e5cba7             --title "MattRip 1.5.0"             --notes-file release-notes.md             --latest
