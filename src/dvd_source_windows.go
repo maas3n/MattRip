@@ -46,14 +46,18 @@ func windowsDVDDriveLabel(letter byte) string {
 	return fmt.Sprintf("DVD Drive %c:", letter)
 }
 
+var windowsDriveType = func(letter byte) uintptr {
+	rootPtr, _ := syscall.UTF16PtrFromString(windowsDriveRoot(letter))
+	t, _, _ := procDVDGetDriveTypeW.Call(uintptr(unsafe.Pointer(rootPtr)))
+	return t
+}
+
 func resolvePhysicalDVDDrive(raw string) (dvdDrive, bool, error) {
 	letter, ok := windowsDriveLetter(raw)
 	if !ok {
 		return dvdDrive{}, false, nil
 	}
-	rootPtr, _ := syscall.UTF16PtrFromString(windowsDriveRoot(letter))
-	t, _, _ := procDVDGetDriveTypeW.Call(uintptr(unsafe.Pointer(rootPtr)))
-	if t != driveCDROM {
+	if windowsDriveType(letter) != driveCDROM {
 		return dvdDrive{}, false, nil
 	}
 	return dvdDrive{Input: windowsDriveInput(letter), Label: windowsDVDDriveLabel(letter), BaseName: fmt.Sprintf("DVD-%c", letter)}, true, nil
@@ -62,9 +66,7 @@ func resolvePhysicalDVDDrive(raw string) (dvdDrive, bool, error) {
 func platformDVDDrives() ([]dvdDrive, error) {
 	var drives []dvdDrive
 	for letter := byte('A'); letter <= 'Z'; letter++ {
-		rootPtr, _ := syscall.UTF16PtrFromString(windowsDriveRoot(letter))
-		t, _, _ := procDVDGetDriveTypeW.Call(uintptr(unsafe.Pointer(rootPtr)))
-		if t == driveCDROM {
+		if windowsDriveType(letter) == driveCDROM {
 			drives = append(drives, dvdDrive{Input: windowsDriveInput(letter), Label: windowsDVDDriveLabel(letter), BaseName: fmt.Sprintf("DVD-%c", letter)})
 		}
 	}
