@@ -144,7 +144,7 @@ class TabMediaEngine(private val context: Context, private val dvd: AndroidNativ
 
     fun demux(uri: Uri, tree: Uri, indexes: IntArray?, chapters: Boolean, vob: Boolean, status: (String) -> Unit = {}): Uri = operation {
         fun report(message: String) {
-            android.util.Log.i("MattMuxDemux", message)
+            android.util.Log.i("MattRipDemux", message)
             status(message)
         }
         val directory = File(root, "export-${System.nanoTime()}").apply { check(mkdir()) }
