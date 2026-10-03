@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
-        <provider android:name=".DemuxDocumentsProvider" android:authorities="io.github.maas3n.mattmux.demux-test" android:exported="true" android:permission="android.permission.MANAGE_DOCUMENTS" android:grantUriPermissions="true" />
+        <provider android:name="io.github.maas3n.mattmux.DemuxDocumentsProvider" android:authorities="io.github.maas3n.mattrip.demux-test" android:exported="true" android:permission="android.permission.MANAGE_DOCUMENTS" android:grantUriPermissions="true" />
     </application>
     <instrumentation android:name="io.github.maas3n.mattmux.DemuxSmokeInstrumentation"
-        android:targetPackage="io.github.maas3n.mattmux" />
+        android:targetPackage="io.github.maas3n.mattrip" />
 </manifest>

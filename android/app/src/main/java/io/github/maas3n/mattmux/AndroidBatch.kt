@@ -80,7 +80,7 @@ internal class AndroidBatchProcessor(
             }
         }
         try {
-            log("MattMux Android batch start: movies=${movies.size} input=$inputRoot output=${outputRoot ?: "<beside source>"}")
+            log("MattRip Android batch start: movies=${movies.size} input=$inputRoot output=${outputRoot ?: "<beside source>"}")
             movies.forEachIndexed { index, movie ->
                 if (cancelled.get()) return@forEachIndexed
                 activeIndex = index
@@ -119,8 +119,8 @@ internal class AndroidBatchProcessor(
         }
 
         val wasCancelled = cancelled.get()
-        if (wasCancelled) log("MattMux Android batch cancelled: completed=$completed total=${movies.size}")
-        else log("MattMux Android batch complete: completed=$completed failed=${failures.size} total=${movies.size}")
+        if (wasCancelled) log("MattRip Android batch cancelled: completed=$completed total=${movies.size}")
+        else log("MattRip Android batch complete: completed=$completed failed=${failures.size} total=${movies.size}")
         return AndroidBatchResult(movies.size, completed, outputs, failures, wasCancelled)
     }
 

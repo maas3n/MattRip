@@ -15,7 +15,7 @@ DIST="$ROOT/dist/linux-release"
 WORK="$ROOT/dist/linux-work"
 
 # Pinned third-party tools for the Debian package. They are installed only
-# below /usr/lib/mattmux and never replace distro executables in /usr/bin.
+# below /usr/lib/mattrip and never replace distro executables in /usr/bin.
 FFMPEG_TAG="autobuild-2026-09-08-23-15"
 FFMPEG_ASSET="ffmpeg-N-126479-g08cd8df29d-linux64-gpl.tar.xz"
 FFMPEG_SHA256="635a2d74de852064852e95db5a9c475a86d36e2b6390e3c1ba5e46b2c46dfce0"
@@ -57,34 +57,34 @@ pushd "$SRC" >/dev/null
 export CGO_ENABLED=1
 go test -tags cli ./...
 go vet -tags cli ./...
-go build -trimpath -ldflags "-s -w -X main.appVersion=$APP_VERSION" -o "$WORK/bin/mattmux-bin" .
-go build -tags cli -trimpath -ldflags "-s -w -X main.appVersion=$APP_VERSION" -o "$WORK/bin/mattmux-cli-bin" .
+go build -trimpath -ldflags "-s -w -X main.appVersion=$APP_VERSION" -o "$WORK/bin/mattrip-bin" .
+go build -tags cli -trimpath -ldflags "-s -w -X main.appVersion=$APP_VERSION" -o "$WORK/bin/mattrip-cli-bin" .
 popd >/dev/null
 
-# The portable tarball remains small and uses the normal MattMux runtime tool
+# The portable tarball remains small and uses the normal MattRip runtime tool
 # discovery/fallback behavior. The .deb below is the self-contained installer.
-PORTABLE="$WORK/MattMux-$APP_VERSION-Linux-amd64"
+PORTABLE="$WORK/MattRip-$APP_VERSION-Linux-amd64"
 mkdir -p "$PORTABLE"
-install -m 0755 "$WORK/bin/mattmux-bin" "$PORTABLE/mattmux"
-install -m 0755 "$WORK/bin/mattmux-cli-bin" "$PORTABLE/mattmux-cli"
+install -m 0755 "$WORK/bin/mattrip-bin" "$PORTABLE/mattrip"
+install -m 0755 "$WORK/bin/mattrip-cli-bin" "$PORTABLE/mattrip-cli"
 cat > "$PORTABLE/README-LINUX.txt" <<TXT
-MattMux $APP_VERSION for Debian/Ubuntu Linux (amd64)
+MattRip $APP_VERSION for Debian/Ubuntu Linux (amd64)
 
-mattmux      Desktop GUI
-mattmux-cli  Command-line interface
+mattrip      Desktop GUI
+mattrip-cli  Command-line interface
 
 This portable archive checks ffmpeg, ffprobe, and mediainfo on PATH first.
 System ffmpeg/ffprobe are used only when FFmpeg exposes the dvdvideo demuxer.
-If system FFmpeg is missing or incompatible, MattMux can prepare its pinned,
+If system FFmpeg is missing or incompatible, MattRip can prepare its pinned,
 SHA-256-verified FFmpeg fallback in the current user's cache.
 MediaInfo is optional for the portable archive.
 
 For a one-file installer with all required multimedia tools included, use the
-MattMux .deb package. Its private tools never replace system multimedia tools.
+MattRip .deb package. Its private tools never replace system multimedia tools.
 
-MattMux does not bypass DVD copy protection such as CSS.
+MattRip does not bypass DVD copy protection such as CSS.
 TXT
-tar -C "$WORK" -czf "$DIST/MattMux-$APP_VERSION-Linux-amd64.tar.gz" "$(basename "$PORTABLE")"
+tar -C "$WORK" -czf "$DIST/MattRip-$APP_VERSION-Linux-amd64.tar.gz" "$(basename "$PORTABLE")"
 
 # Download and verify the exact GPL FFmpeg build used inside the self-contained
 # .deb. dvdvideo requires a GPL-enabled FFmpeg build with libdvdnav/read.
@@ -146,103 +146,103 @@ DEBROOT="$WORK/deb-root"
 mkdir -p \
   "$DEBROOT/DEBIAN" \
   "$DEBROOT/usr/bin" \
-  "$DEBROOT/usr/lib/mattmux/app" \
-  "$DEBROOT/usr/lib/mattmux/ffmpeg-bin" \
-  "$DEBROOT/usr/lib/mattmux/mediainfo-bin" \
+  "$DEBROOT/usr/lib/mattrip/app" \
+  "$DEBROOT/usr/lib/mattrip/ffmpeg-bin" \
+  "$DEBROOT/usr/lib/mattrip/mediainfo-bin" \
   "$DEBROOT/usr/share/applications" \
-  "$DEBROOT/usr/share/doc/mattmux"
+  "$DEBROOT/usr/share/doc/mattrip"
 
-install -m 0755 "$WORK/bin/mattmux-bin" "$DEBROOT/usr/lib/mattmux/app/mattmux-bin"
-install -m 0755 "$WORK/bin/mattmux-cli-bin" "$DEBROOT/usr/lib/mattmux/app/mattmux-cli-bin"
-install -m 0755 "$BUNDLED_FFMPEG" "$DEBROOT/usr/lib/mattmux/ffmpeg-bin/ffmpeg"
-install -m 0755 "$BUNDLED_FFPROBE" "$DEBROOT/usr/lib/mattmux/ffmpeg-bin/ffprobe"
-install -m 0755 "$BUNDLED_MEDIAINFO" "$DEBROOT/usr/lib/mattmux/mediainfo-bin/mediainfo"
+install -m 0755 "$WORK/bin/mattrip-bin" "$DEBROOT/usr/lib/mattrip/app/mattrip-bin"
+install -m 0755 "$WORK/bin/mattrip-cli-bin" "$DEBROOT/usr/lib/mattrip/app/mattrip-cli-bin"
+install -m 0755 "$BUNDLED_FFMPEG" "$DEBROOT/usr/lib/mattrip/ffmpeg-bin/ffmpeg"
+install -m 0755 "$BUNDLED_FFPROBE" "$DEBROOT/usr/lib/mattrip/ffmpeg-bin/ffprobe"
+install -m 0755 "$BUNDLED_MEDIAINFO" "$DEBROOT/usr/lib/mattrip/mediainfo-bin/mediainfo"
 
-# These launchers modify PATH only for the MattMux child process. They do not
+# These launchers modify PATH only for the MattRip child process. They do not
 # write to /etc/environment, shell profiles, alternatives, or any system PATH
 # configuration. This makes the .deb self-contained while leaving any existing
 # /usr/bin/ffmpeg, /usr/bin/ffprobe, and /usr/bin/mediainfo completely untouched.
-cat > "$DEBROOT/usr/bin/mattmux" <<'LAUNCHER'
+cat > "$DEBROOT/usr/bin/mattrip" <<'LAUNCHER'
 #!/bin/sh
 set -eu
-FFDIR=/usr/lib/mattmux/ffmpeg-bin
-MIDIR=/usr/lib/mattmux/mediainfo-bin
+FFDIR=/usr/lib/mattrip/ffmpeg-bin
+MIDIR=/usr/lib/mattrip/mediainfo-bin
 PATH="$FFDIR:$MIDIR:$PATH"
 export PATH
-exec /usr/lib/mattmux/app/mattmux-bin "$@"
+exec /usr/lib/mattrip/app/mattrip-bin "$@"
 LAUNCHER
-chmod 0755 "$DEBROOT/usr/bin/mattmux"
+chmod 0755 "$DEBROOT/usr/bin/mattrip"
 
-cat > "$DEBROOT/usr/bin/mattmux-cli" <<'LAUNCHER'
+cat > "$DEBROOT/usr/bin/mattrip-cli" <<'LAUNCHER'
 #!/bin/sh
 set -eu
-FFDIR=/usr/lib/mattmux/ffmpeg-bin
-MIDIR=/usr/lib/mattmux/mediainfo-bin
+FFDIR=/usr/lib/mattrip/ffmpeg-bin
+MIDIR=/usr/lib/mattrip/mediainfo-bin
 PATH="$FFDIR:$MIDIR:$PATH"
 export PATH
-exec /usr/lib/mattmux/app/mattmux-cli-bin "$@"
+exec /usr/lib/mattrip/app/mattrip-cli-bin "$@"
 LAUNCHER
-chmod 0755 "$DEBROOT/usr/bin/mattmux-cli"
+chmod 0755 "$DEBROOT/usr/bin/mattrip-cli"
 
 cat > "$DEBROOT/DEBIAN/control" <<CONTROL
-Package: mattmux
+Package: mattrip
 Version: $DEB_VERSION
 Section: video
 Priority: optional
 Architecture: amd64
-Maintainer: MattMux project <noreply@github.com>
+Maintainer: MattRip project <noreply@github.com>
 Depends: libc6 (>= 2.38), libstdc++6, libgcc-s1, ca-certificates, libgl1, libx11-6, libxcursor1, libxrandr2, libxinerama1, libxi6, libxkbcommon0, libwayland-client0
-Homepage: https://github.com/maas3n/MattMux
+Homepage: https://github.com/maas3n/MattRip
 Description: Self-contained lossless DVD title remuxer
- MattMux scans DVD-Video titles and remuxes the selected title to MKV without
- transcoding. This package installs the MattMux desktop GUI and CLI together
- with private FFmpeg, FFprobe and MediaInfo binaries under /usr/lib/mattmux.
+ MattRip scans DVD-Video titles and remuxes the selected title to MKV without
+ transcoding. This package installs the MattRip desktop GUI and CLI together
+ with private FFmpeg, FFprobe and MediaInfo binaries under /usr/lib/mattrip.
  Existing distro multimedia tools and the user's system PATH are never replaced.
 CONTROL
 
-cat > "$DEBROOT/usr/share/applications/mattmux.desktop" <<DESKTOP
+cat > "$DEBROOT/usr/share/applications/mattrip.desktop" <<DESKTOP
 [Desktop Entry]
 Type=Application
-Name=MattMux
+Name=MattRip
 Comment=Lossless DVD title remuxing to Matroska
-Exec=mattmux
+Exec=mattrip
 Icon=video-x-generic
 Terminal=false
 Categories=AudioVideo;AudioVideoEditing;Utility;
 Keywords=DVD;MKV;FFmpeg;Remux;
 DESKTOP
 
-cat > "$DEBROOT/usr/share/doc/mattmux/README.Debian" <<TXT
-MattMux for Debian/Ubuntu
+cat > "$DEBROOT/usr/share/doc/mattrip/README.Debian" <<TXT
+MattRip for Debian/Ubuntu
 =========================
 
-This .deb is the self-contained Linux installer for MattMux $APP_VERSION.
+This .deb is the self-contained Linux installer for MattRip $APP_VERSION.
 Install this one package; FFmpeg, FFprobe and MediaInfo are already included.
 
 Commands installed by this package:
-  /usr/bin/mattmux
-  /usr/bin/mattmux-cli
+  /usr/bin/mattrip
+  /usr/bin/mattrip-cli
 
-Private bundled tools used only by MattMux:
-  /usr/lib/mattmux/ffmpeg-bin/ffmpeg
-  /usr/lib/mattmux/ffmpeg-bin/ffprobe
-  /usr/lib/mattmux/mediainfo-bin/mediainfo
+Private bundled tools used only by MattRip:
+  /usr/lib/mattrip/ffmpeg-bin/ffmpeg
+  /usr/lib/mattrip/ffmpeg-bin/ffprobe
+  /usr/lib/mattrip/mediainfo-bin/mediainfo
 
-MattMux DOES NOT install or replace:
+MattRip DOES NOT install or replace:
   /usr/bin/ffmpeg
   /usr/bin/ffprobe
   /usr/bin/mediainfo
 
 It also does not modify /etc/environment, shell startup files, alternatives, or
 any other system PATH configuration. The launcher prepends the private tool
-directories only to the MattMux process, so an existing system FFmpeg,
-FFprobe, or MediaInfo remains exactly as it was before MattMux was installed.
+directories only to the MattRip process, so an existing system FFmpeg,
+FFprobe, or MediaInfo remains exactly as it was before MattRip was installed.
 
-Use "mattmux-cli tools" to see the private paths MattMux resolves.
+Use "mattrip-cli tools" to see the private paths MattRip resolves.
 TXT
 
-cat > "$DEBROOT/usr/share/doc/mattmux/THIRD-PARTY-NOTICES" <<TXT
-Third-party software bundled with MattMux $APP_VERSION
+cat > "$DEBROOT/usr/share/doc/mattrip/THIRD-PARTY-NOTICES" <<TXT
+Third-party software bundled with MattRip $APP_VERSION
 =====================================================
 
 FFmpeg / FFprobe
@@ -269,27 +269,27 @@ MediaArea zlib commit: $ZLIB_COMMIT
 Source: https://github.com/MediaArea/MediaInfo
 License: BSD-2-Clause (see MediaInfo-LICENSE in this directory).
 
-MattMux keeps these programs private under /usr/lib/mattmux and does not claim
-them as part of MattMux itself.
+MattRip keeps these programs private under /usr/lib/mattrip and does not claim
+them as part of MattRip itself.
 TXT
-install -m 0644 "$MI_SRC/LICENSE" "$DEBROOT/usr/share/doc/mattmux/MediaInfo-LICENSE"
+install -m 0644 "$MI_SRC/LICENSE" "$DEBROOT/usr/share/doc/mattrip/MediaInfo-LICENSE"
 
 # Preserve any FFmpeg license/readme text distributed in the pinned build.
 FF_LICENSE="$(find "$FF_EXTRACT" -type f \( -iname 'license*' -o -iname 'copying*' \) | head -n1 || true)"
-if [[ -n "$FF_LICENSE" ]]; then install -m 0644 "$FF_LICENSE" "$DEBROOT/usr/share/doc/mattmux/FFmpeg-LICENSE"; fi
+if [[ -n "$FF_LICENSE" ]]; then install -m 0644 "$FF_LICENSE" "$DEBROOT/usr/share/doc/mattrip/FFmpeg-LICENSE"; fi
 
 # Use an installer-style release filename while retaining a Debian-compliant
 # package name/version in DEBIAN/control.
-dpkg-deb --build --root-owner-group "$DEBROOT" "$DIST/MattMux-$APP_VERSION-Linux-amd64.deb" >/dev/null
+dpkg-deb --build --root-owner-group "$DEBROOT" "$DIST/MattRip-$APP_VERSION-Linux-amd64.deb" >/dev/null
 
-# Source snapshot from the exact MattMux commit being built, plus the module
+# Source snapshot from the exact MattRip commit being built, plus the module
 # metadata resolved by CI so the archive is immediately buildable.
-SOURCE="$WORK/MattMux-$APP_VERSION-Source"
+SOURCE="$WORK/MattRip-$APP_VERSION-Source"
 mkdir -p "$SOURCE"
 git -C "$ROOT" archive HEAD | tar -x -C "$SOURCE"
 if [[ -f "$SRC/go.mod" ]]; then cp "$SRC/go.mod" "$SOURCE/src/go.mod"; fi
 if [[ -f "$SRC/go.sum" ]]; then cp "$SRC/go.sum" "$SOURCE/src/go.sum"; fi
-tar -C "$WORK" -czf "$DIST/MattMux-$APP_VERSION-Source.tar.gz" "$(basename "$SOURCE")"
+tar -C "$WORK" -czf "$DIST/MattRip-$APP_VERSION-Source.tar.gz" "$(basename "$SOURCE")"
 
 (
   cd "$DIST"

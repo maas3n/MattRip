@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Fork MattRip from the verified MattMux 1.4.19 baseline and establish separate Windows, Linux, Android, CLI, package, cache, installer, and release identities without changing media-engine behavior.
+- Preserve historical MattMux release artifacts only where they are checksum-verified build inputs; historical entries below remain MattMux history rather than being relabeled as MattRip releases.
+- Retire inherited one-off MattMux publish/hotfix workflows from the active fork workflow set.
+
 - Keep the Windows All-in-One chooser and its message loop on the same OS
   thread to prevent the launcher becoming unresponsive. Test all three buttons.
 - Add an isolated Mesa software renderer to the Linux standalone, with exact

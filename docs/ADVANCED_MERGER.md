@@ -15,13 +15,13 @@ Movie inputs intentionally differ from the filtered Audio and Subtitle buttons. 
 
 Raw/elementary inputs are supported when the bundled FFmpeg runtime can demux them, including common H.264, MPEG-2/VOB, AAC, AC-3, MP3, DTS, SRT, WebVTT, SUP and similar formats.
 
-For VobSub on Android/ChromeOS, select the matching `.idx` and `.sub` files together so MattMux can stage the sidecar pair before probing.
+For VobSub on Android/ChromeOS, select the matching `.idx` and `.sub` files together so MattRip can stage the sidecar pair before probing.
 
 ## Stream and chapter selection
 
 Every discovered stream or chapter set is initially selected. Clear any checkbox you do not want in the output.
 
-Embedded chapters are represented as chapter-set checkboxes because chapters are container metadata rather than packet streams. When no dedicated chapter override is chosen, select at most one movie chapter set. If more than one movie chapter set is selected, MattMux asks you to choose only one.
+Embedded chapters are represented as chapter-set checkboxes because chapters are container metadata rather than packet streams. When no dedicated chapter override is chosen, select at most one movie chapter set. If more than one movie chapter set is selected, MattRip asks you to choose only one.
 
 A chapter source chosen with **CHOOSE CHAPTER FILE FROM MKV or RAW** overrides selected embedded movie chapters. The dedicated picker intentionally accepts MKV or `FFMETADATA1`; movie inputs themselves may carry embedded chapters in other FFmpeg-supported containers such as MP4.
 
@@ -31,7 +31,7 @@ At least one non-chapter stream must remain selected before muxing.
 
 Choose the output folder, enter an `.mkv` filename, and press **MUX TO MKV**.
 
-MattMux maps the exact selected input stream indexes and uses stream copy (`-c copy` on desktop, equivalent native libav packet copying on Android/ChromeOS). It does not intentionally re-encode video or audio. On Windows and Linux, every Advanced Merger input is opened with `-analyzeduration 100M -probesize 100M -fflags +genpts` before muxing so damaged or timestamp-irregular sources get the same robust input handling as DVD remuxes.
+MattRip maps the exact selected input stream indexes and uses stream copy (`-c copy` on desktop, equivalent native libav packet copying on Android/ChromeOS). It does not intentionally re-encode video or audio. On Windows and Linux, every Advanced Merger input is opened with `-analyzeduration 100M -probesize 100M -fflags +genpts` before muxing so damaged or timestamp-irregular sources get the same robust input handling as DVD remuxes.
 
 Desktop muxing preserves global metadata from the first media input and explicitly copies metadata for each selected stream. This includes stream language/title metadata and attachment filenames where present. Chapter titles are preserved when chapters are copied from either an embedded movie chapter set or the dedicated chapter source.
 
@@ -41,7 +41,7 @@ Existing output files are not overwritten. Cancel stops the active probe/copy/mu
 
 ## Android / ChromeOS temporary storage
 
-Android's Storage Access Framework does not guarantee a normal seekable filesystem path for every selected document. MattMux therefore stages selected Advanced Merger inputs in private temporary storage and creates the output there before copying the completed MKV to the chosen destination.
+Android's Storage Access Framework does not guarantee a normal seekable filesystem path for every selected document. MattRip therefore stages selected Advanced Merger inputs in private temporary storage and creates the output there before copying the completed MKV to the chosen destination.
 
 The device needs enough free temporary space for the selected input copies plus the in-progress output. Temporary merger data is cleaned up when the panel is destroyed or an operation completes. The tab container also applies current status- and navigation-bar insets so the DVD and Advanced Merger interfaces remain clear of system UI across phones, navigation modes, rotation, and resizable ChromeOS windows.
 
@@ -55,4 +55,4 @@ ffmpeg -i input2.mkv -i input.mp4 -i input.mkv -i input.ac3 -i input.srt \
   -map_chapters 0 -c copy output.mkv
 ```
 
-MattMux constructs its maps from the individual stream checkboxes rather than mapping every stream of a category automatically. The chapter source is resolved separately from packet-stream maps so embedded chapters or a dedicated chapter override can be selected without treating chapters as ordinary streams.
+MattRip constructs its maps from the individual stream checkboxes rather than mapping every stream of a category automatically. The chapter source is resolved separately from packet-stream maps so embedded chapters or a dedicated chapter override can be selected without treating chapters as ordinary streams.

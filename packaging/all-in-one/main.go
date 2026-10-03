@@ -17,15 +17,15 @@ import (
 	"unsafe"
 )
 
-//go:embed assets/MattMux-1.2.0-Portable.zip
+//go:embed assets/MattRip-Portable.zip
 var portableZip []byte
 
-//go:embed assets/MattMux-1.2.0-Thin-Setup.exe
+//go:embed assets/MattRip-Thin-Setup.exe
 var thinSetup []byte
 
-const (
-	appVersion = "1.2.0"
+var appVersion = "dev"
 
+const (
 	wmDestroy = 0x0002
 	wmClose   = 0x0010
 	wmCommand = 0x0111
@@ -161,7 +161,7 @@ func chooseAction() error {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 	instance, _, _ := procGetModuleHandleW.Call(0)
-	className := utf16Ptr("MattMuxAllInOneWindow")
+	className := utf16Ptr("MattRipAllInOneWindow")
 	cursor, _, _ := procLoadCursorW.Call(0, 32512)
 	wc := wndClassEx{
 		cbSize:        uint32(unsafe.Sizeof(wndClassEx{})),
@@ -179,7 +179,7 @@ func chooseAction() error {
 	hwnd, _, createErr := procCreateWindowExW.Call(
 		0,
 		uintptr(unsafe.Pointer(className)),
-		uintptr(unsafe.Pointer(utf16Ptr("MattMux "+appVersion+" — All-in-One"))),
+		uintptr(unsafe.Pointer(utf16Ptr("MattRip "+appVersion+" — All-in-One"))),
 		uintptr(wsCaption|wsSysMenu),
 		0x80000000, 0x80000000,
 		520, 230,
@@ -189,9 +189,9 @@ func chooseAction() error {
 		return fmt.Errorf("could not create chooser window: %v", createErr)
 	}
 
-	createControl("STATIC", "Choose how you want to use MattMux.\r\nBoth choices include FFmpeg, FFprobe, and MediaInfo.", wsChild|wsVisible|ssCenter, 35, 30, 450, 52, hwnd, 0, instance)
-	createControl("BUTTON", "Run MattMux", wsChild|wsVisible, 35, 115, 135, 38, hwnd, idRun, instance)
-	createControl("BUTTON", "Install MattMux", wsChild|wsVisible, 192, 115, 135, 38, hwnd, idInstall, instance)
+	createControl("STATIC", "Choose how you want to use MattRip.\r\nBoth choices include FFmpeg, FFprobe, and MediaInfo.", wsChild|wsVisible|ssCenter, 35, 30, 450, 52, hwnd, 0, instance)
+	createControl("BUTTON", "Run MattRip", wsChild|wsVisible, 35, 115, 135, 38, hwnd, idRun, instance)
+	createControl("BUTTON", "Install MattRip", wsChild|wsVisible, 192, 115, 135, 38, hwnd, idInstall, instance)
 	createControl("BUTTON", "Exit", wsChild|wsVisible, 349, 115, 135, 38, hwnd, idExit, instance)
 
 	procShowWindow.Call(hwnd, swShow)
@@ -266,18 +266,18 @@ func extractPortable(root string) (string, error) {
 		if err := copyZipFile(f, out); err != nil {
 			return "", err
 		}
-		if strings.EqualFold(filepath.Base(out), "MattMux-Portable.exe") {
+		if strings.EqualFold(filepath.Base(out), "MattRip-Portable.exe") {
 			portableExe = out
 		}
 	}
 	if portableExe == "" {
-		return "", fmt.Errorf("MattMux-Portable.exe was not found in the embedded package")
+		return "", fmt.Errorf("MattRip-Portable.exe was not found in the embedded package")
 	}
 	return portableExe, nil
 }
 
 func runPortable() error {
-	root, err := os.MkdirTemp("", "MattMux-1.2.0-Run-")
+	root, err := os.MkdirTemp("", "MattRip-"+appVersion+"-Run-")
 	if err != nil {
 		return err
 	}
@@ -285,12 +285,12 @@ func runPortable() error {
 
 	exePath, err := extractPortable(root)
 	if err != nil {
-		return fmt.Errorf("could not prepare portable MattMux: %w", err)
+		return fmt.Errorf("could not prepare portable MattRip: %w", err)
 	}
 	cmd := exec.Command(exePath)
 	cmd.Dir = filepath.Dir(exePath)
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("MattMux exited with an error: %w", err)
+		return fmt.Errorf("MattRip exited with an error: %w", err)
 	}
 	return nil
 }
@@ -304,21 +304,21 @@ func preloadTools() error {
 		}
 		local = filepath.Join(home, "AppData", "Local")
 	}
-	destRoot := filepath.Join(local, "MattMux")
+	destRoot := filepath.Join(local, "MattRip")
 
 	zr, err := zip.NewReader(bytes.NewReader(portableZip), int64(len(portableZip)))
 	if err != nil {
 		return err
 	}
 	copied := 0
-	const marker = "MattMuxData/tools/"
+	const marker = "MattRipData/tools/"
 	for _, f := range zr.File {
 		norm := strings.ReplaceAll(f.Name, "\\", "/")
 		idx := strings.Index(norm, marker)
 		if idx < 0 {
 			continue
 		}
-		rel := norm[idx+len("MattMuxData/"):]
+		rel := norm[idx+len("MattRipData/"):]
 		out, err := safeZipPath(destRoot, rel)
 		if err != nil {
 			return err
@@ -368,16 +368,16 @@ func shellRunAsAndWait(file string) error {
 	return nil
 }
 
-func installMattMux() error {
+func installMattRip() error {
 	if err := preloadTools(); err != nil {
 		return fmt.Errorf("could not preload bundled tools: %w", err)
 	}
-	root, err := os.MkdirTemp("", "MattMux-1.2.0-Install-")
+	root, err := os.MkdirTemp("", "MattRip-"+appVersion+"-Install-")
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(root)
-	setupPath := filepath.Join(root, "MattMux-1.2.0-Setup.exe")
+	setupPath := filepath.Join(root, "MattRip-"+appVersion+"-Setup.exe")
 	if err := os.WriteFile(setupPath, thinSetup, 0644); err != nil {
 		return err
 	}
@@ -391,7 +391,7 @@ func showError(err error) {
 	procMessageBoxW.Call(
 		0,
 		uintptr(unsafe.Pointer(utf16Ptr(err.Error()))),
-		uintptr(unsafe.Pointer(utf16Ptr("MattMux All-in-One"))),
+		uintptr(unsafe.Pointer(utf16Ptr("MattRip All-in-One"))),
 		0x00000010,
 	)
 }
@@ -406,7 +406,7 @@ func main() {
 	case idRun:
 		err = runPortable()
 	case idInstall:
-		err = installMattMux()
+		err = installMattRip()
 	default:
 		return
 	}

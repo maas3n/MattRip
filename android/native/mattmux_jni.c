@@ -913,7 +913,7 @@ Java_io_github_maas3n_mattmux_AndroidNativeRemuxEngine_nativeScanDvdNav(JNIEnv *
 
     dvdnav_t *nav = NULL;
     if (dvdnav_open(&nav, path) != DVDNAV_STATUS_OK || !nav) {
-        __android_log_print(ANDROID_LOG_ERROR, "MattMuxDVDNav", "dvdnav_open failed for %s", path);
+        __android_log_print(ANDROID_LOG_ERROR, "MattRipDVDNav", "dvdnav_open failed for %s", path);
         (*env)->ReleaseStringUTFChars(env, path_string, path);
         if (nav) dvdnav_close(nav);
         return NULL;
@@ -922,7 +922,7 @@ Java_io_github_maas3n_mattmux_AndroidNativeRemuxEngine_nativeScanDvdNav(JNIEnv *
 
     int32_t title_count = 0;
     if (dvdnav_get_number_of_titles(nav, &title_count) != DVDNAV_STATUS_OK || title_count <= 0) {
-        __android_log_print(ANDROID_LOG_ERROR, "MattMuxDVDNav", "dvdnav_get_number_of_titles failed");
+        __android_log_print(ANDROID_LOG_ERROR, "MattRipDVDNav", "dvdnav_get_number_of_titles failed");
         dvdnav_close(nav);
         return NULL;
     }
@@ -941,7 +941,7 @@ Java_io_github_maas3n_mattmux_AndroidNativeRemuxEngine_nativeScanDvdNav(JNIEnv *
         uint64_t *chapter_times = NULL;
         uint64_t duration = 0;
         uint32_t chapters = dvdnav_describe_title_chapters(nav, title, &chapter_times, &duration);
-        __android_log_print(ANDROID_LOG_INFO, "MattMuxDVDNav",
+        __android_log_print(ANDROID_LOG_INFO, "MattRipDVDNav",
                             "title %d/%d chapters=%u duration_ticks=%llu",
                             title, title_count, chapters, (unsigned long long)duration);
         free(chapter_times);

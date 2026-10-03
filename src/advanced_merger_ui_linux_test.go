@@ -65,7 +65,7 @@ func TestAdvancedMergerAndBatchTabs(t *testing.T) {
 
 	w.Resize(fyne.NewSize(840, 620))
 	tabs.SelectIndex(2)
-	if path := os.Getenv("MATTMUX_UI_CAPTURE"); path != "" {
+	if path := os.Getenv("MATTRIP_UI_CAPTURE"); path != "" {
 		f, err := os.Create(path)
 		if err != nil {
 			t.Fatal(err)

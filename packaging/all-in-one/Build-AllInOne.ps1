@@ -1,12 +1,16 @@
+param(
+    [string]$AppVersion = '0.0.0'
+)
+
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $dist = Join-Path $repoRoot 'dist'
-$iss = Join-Path $repoRoot 'packaging\installer\MattMux.iss'
-$portable = Join-Path $dist 'MattMux-1.2.0-Portable.zip'
-$thinSetup = Join-Path $dist 'MattMux-1.2.0-Thin-Setup.exe'
-$output = Join-Path $dist 'MattMux-1.2.0-All-in-One.exe'
+$iss = Join-Path $repoRoot 'packaging\installer\MattRip.iss'
+$portable = Join-Path $dist "MattRip-$AppVersion-Portable.zip"
+$thinSetup = Join-Path $dist "MattRip-$AppVersion-Thin-Setup.exe"
+$output = Join-Path $dist "MattRip-$AppVersion-All-in-One.exe"
 $assets = Join-Path $PSScriptRoot 'assets'
 
 if (-not (Test-Path -LiteralPath $portable)) {
@@ -21,21 +25,22 @@ if (-not (Test-Path -LiteralPath $iscc)) {
 }
 
 Remove-Item -LiteralPath $thinSetup -Force -ErrorAction SilentlyContinue
-& $iscc '/DMyAppVersion=1.2.0' '/DThinSetup=1' $iss
+& $iscc "/DMyAppVersion=$AppVersion" '/DThinSetup=1' $iss
 if ($LASTEXITCODE -ne 0) { throw "Thin installer build failed with exit code $LASTEXITCODE" }
 if (-not (Test-Path -LiteralPath $thinSetup)) { throw "Thin installer was not produced: $thinSetup" }
 
 Remove-Item -LiteralPath $assets -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $assets | Out-Null
-Copy-Item -LiteralPath $portable -Destination (Join-Path $assets 'MattMux-1.2.0-Portable.zip') -Force
-Copy-Item -LiteralPath $thinSetup -Destination (Join-Path $assets 'MattMux-1.2.0-Thin-Setup.exe') -Force
+Copy-Item -LiteralPath $portable -Destination (Join-Path $assets 'MattRip-Portable.zip') -Force
+Copy-Item -LiteralPath $thinSetup -Destination (Join-Path $assets 'MattRip-Thin-Setup.exe') -Force
 
 Push-Location $PSScriptRoot
 try {
     $env:CGO_ENABLED = '0'
     go test -v .\main.go .\main_test.go
     if ($LASTEXITCODE -ne 0) { throw "All-in-one chooser regression failed with exit code $LASTEXITCODE" }
-    go build -trimpath -buildvcs=false -ldflags '-s -w -H=windowsgui' -o $output .\main.go
+    $ldflags = "-s -w -H=windowsgui -X main.appVersion=$AppVersion"
+    go build -trimpath -buildvcs=false -ldflags $ldflags -o $output .\main.go
     if ($LASTEXITCODE -ne 0) { throw "All-in-one build failed with exit code $LASTEXITCODE" }
 }
 finally {

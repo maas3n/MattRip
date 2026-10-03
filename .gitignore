@@ -18,8 +18,8 @@ android/native/.work/
 android/app/src/main/jniLibs/
 android/app/src/main/assets/ffmpeg/
 
-# MattMux runtime data
-MattMuxData/
+# MattRip runtime data
+MattRipData/
 settings.json
 *.log
 *.partial.mkv

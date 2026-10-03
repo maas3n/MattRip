@@ -12,7 +12,7 @@ import (
 
 func TestCLIInterruptCleansOwnedPartial(t *testing.T) {
 	root := t.TempDir()
-	cli := filepath.Join(root, "mattmux-cli")
+	cli := filepath.Join(root, "mattrip-cli")
 	build := exec.Command("go", "build", "-tags", "cli", "-o", cli, ".")
 	if out, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("build CLI: %v\n%s", err, out)
@@ -58,7 +58,7 @@ exec sleep 30
 	deadline := time.Now().Add(8 * time.Second)
 	found := false
 	for time.Now().Before(deadline) {
-		matches, _ := filepath.Glob(filepath.Join(outDir, ".mattmux-*.partial.mkv"))
+		matches, _ := filepath.Glob(filepath.Join(outDir, ".mattrip-*.partial.mkv"))
 		if len(matches) > 0 {
 			found = true
 			break
@@ -85,7 +85,7 @@ exec sleep 30
 	}
 	for _, entry := range entries {
 		if filepath.Ext(entry.Name()) == ".mkv" || filepath.Base(entry.Name()) != "" && len(entry.Name()) > 0 && filepath.Clean(entry.Name()) == entry.Name() {
-			if matched, _ := filepath.Match(".mattmux-*.partial.mkv", entry.Name()); matched {
+			if matched, _ := filepath.Match(".mattrip-*.partial.mkv", entry.Name()); matched {
 				t.Fatalf("Ctrl+C left partial output %s", entry.Name())
 			}
 		}

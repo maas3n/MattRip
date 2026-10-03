@@ -183,16 +183,16 @@ func showWindowsTrackWindow(req windowsTrackRequest) {
 	windowsTracks.Unlock()
 
 	hInstance, _, _ := procGetModuleHandleW.Call(0)
-	className := utf16Ptr("MattMuxTracksWindowClass")
+	className := utf16Ptr("MattRipTracksWindowClass")
 	cursor, _, _ := procLoadCursorW.Call(0, 32512)
 	bg, _, _ := procGetStockObject.Call(5)
 	wc := WNDCLASSEX{CbSize: uint32(unsafe.Sizeof(WNDCLASSEX{})), LpfnWndProc: syscall.NewCallback(windowsTrackWindowProc), HInstance: hInstance, HCursor: cursor, HbrBackground: bg, LpszClassName: className}
 	procRegisterClassExW.Call(uintptr(unsafe.Pointer(&wc)))
 	dpi := windowDPI(app.hwnd)
 	width, height := scale96(900, dpi), scale96(720, dpi)
-	hwnd, _, _ := procCreateWindowExW.Call(WS_EX_CONTROLPARENT, uintptr(unsafe.Pointer(className)), uintptr(unsafe.Pointer(utf16Ptr(fmt.Sprintf("MattMux — Title %d Tracks / Metadata", req.title)))), WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_THICKFRAME|WS_MINIMIZEBOX|WS_MAXIMIZEBOX|WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT, uintptr(width), uintptr(height), app.hwnd, 0, hInstance, 0)
+	hwnd, _, _ := procCreateWindowExW.Call(WS_EX_CONTROLPARENT, uintptr(unsafe.Pointer(className)), uintptr(unsafe.Pointer(utf16Ptr(fmt.Sprintf("MattRip — Title %d Tracks / Metadata", req.title)))), WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_THICKFRAME|WS_MINIMIZEBOX|WS_MAXIMIZEBOX|WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT, uintptr(width), uintptr(height), app.hwnd, 0, hInstance, 0)
 	if hwnd == 0 {
-		messageBox(app.hwnd, "MattMux — Tracks / Metadata", req.details, MB_OK|MB_ICONINFORMATION)
+		messageBox(app.hwnd, "MattRip — Tracks / Metadata", req.details, MB_OK|MB_ICONINFORMATION)
 		return
 	}
 	instruction, _, _ := procCreateWindowExW.Call(0, uintptr(unsafe.Pointer(utf16Ptr("STATIC"))), uintptr(unsafe.Pointer(utf16Ptr("Choose the video, audio, and subtitle tracks to include in the next remux. All tracks are selected by default."))), WS_CHILD|WS_VISIBLE, 0, 0, 0, 0, hwnd, 0, hInstance, 0)

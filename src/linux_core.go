@@ -22,7 +22,7 @@ import (
 	"time"
 )
 
-const appName = "MattMux"
+const appName = "MattRip"
 
 var appVersion = "1.3.0-dev"
 
@@ -87,7 +87,7 @@ func ensureTools(ctx context.Context, needMediaInfo bool, progress progressFunc)
 		}
 		return tools, nil
 	}
-	progress(0, "System FFmpeg missing or incompatible; preparing MattMux-managed FFmpeg…")
+	progress(0, "System FFmpeg missing or incompatible; preparing MattRip-managed FFmpeg…")
 	root, err := cacheRoot()
 	if err != nil {
 		return toolPaths{}, err
@@ -327,7 +327,7 @@ func cacheRoot() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	p = filepath.Join(p, "mattmux")
+	p = filepath.Join(p, "mattrip")
 	if err := os.MkdirAll(p, 0700); err != nil {
 		return "", err
 	}
@@ -396,7 +396,7 @@ func discoverDVDTitlesViaDVDVideo(ctx context.Context, src string, tools toolPat
 
 	// FFmpeg's dvdvideo demuxer accepts title numbers 1..99 and uses
 	// libdvdread/libdvdnav as its source of truth. Deliberately probe the full
-	// title-number range instead of parsing VIDEO_TS.IFO in MattMux. This keeps
+	// title-number range instead of parsing VIDEO_TS.IFO in MattRip. This keeps
 	// folder and ISO title discovery on the same libdvdread/libdvdnav path.
 	maxTitle := 99
 
@@ -527,7 +527,7 @@ func metadataText(ctx context.Context, src string, title titleInfo, tools toolPa
 	}
 	chapters, source, chapterErr := detectChapters(ctx, tools.ffprobe, src, title.Number)
 	var b strings.Builder
-	fmt.Fprintf(&b, "MattMux — DVD title %d\nDuration: %s\n\n", title.Number, formatDuration(title.Duration))
+	fmt.Fprintf(&b, "MattRip — DVD title %d\nDuration: %s\n\n", title.Number, formatDuration(title.Duration))
 	vn, an, sn := 0, 0, 0
 	for _, s := range probe.Streams {
 		lang := strings.TrimSpace(s.Tags["language"])
@@ -713,7 +713,7 @@ func validateOutputDir(dir string) error {
 	if err := os.MkdirAll(abs, 0755); err != nil {
 		return err
 	}
-	f, err := os.CreateTemp(abs, ".mattmux-write-test-")
+	f, err := os.CreateTemp(abs, ".mattrip-write-test-")
 	if err != nil {
 		return fmt.Errorf("output folder is not writable: %w", err)
 	}

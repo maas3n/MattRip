@@ -265,7 +265,7 @@ class AndroidNativeRemuxEngine : RemuxEngine {
         val resolver = context.contentResolver
         openTitle(context, sourceUri, requestedTitle).use { title ->
             check(!cancelled.get()) { "Remux cancelled" }
-            android.util.Log.i("MattMuxPlan", title.plan.diagnosticJson())
+            android.util.Log.i("MattRipPlan", title.plan.diagnosticJson())
             val output = DvdDocumentOutput(resolver, outputTreeUri)
             val pending = output.create(title.plan.globalTitle, outputName)
             var remuxCompleted = false
@@ -329,7 +329,7 @@ class AndroidNativeRemuxEngine : RemuxEngine {
             ?: error("libdvdnav/libdvdread could not scan the staged DVD metadata")
         val result = parseDvdNavScan(values)
         android.util.Log.i(
-            "MattMuxDVDNav",
+            "MattRipDVDNav",
             "libdvdnav/libdvdread scanned ${result.titles.size} title(s); selected title ${result.longestTitle} as longest",
         )
         return result.longestTitle
