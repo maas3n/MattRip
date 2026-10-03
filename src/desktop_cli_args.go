@@ -3,6 +3,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -46,12 +47,15 @@ func cliFlagsFirst(args []string) []string {
 	}
 	return append(append(flags, "--"), positional...)
 }
-func defaultDVDOutputDir(src string) (string, error) {
-	src, err := normalizeSource(src)
+func defaultDVDOutputDir(raw string) (string, error) {
+	source, err := resolveDVDSource(raw)
 	if err != nil {
 		return "", err
 	}
-	abs, err := filepath.Abs(src)
+	if source.Kind == dvdSourcePhysicalDrive {
+		return "", errors.New("physical DVD drives require --output because there is no writable folder beside the disc")
+	}
+	abs, err := filepath.Abs(source.Input)
 	if err != nil {
 		return "", err
 	}
