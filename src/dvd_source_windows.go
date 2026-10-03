@@ -15,11 +15,10 @@ const driveCDROM = 5
 var (
 	dvdKernel32             = syscall.NewLazyDLL("kernel32.dll")
 	procDVDGetDriveTypeW    = dvdKernel32.NewProc("GetDriveTypeW")
-	procDVDGetVolumeInfoW   = dvdKernel32.NewProc("GetVolumeInformationW")
 )
 
 func windowsDriveLetter(raw string) (byte, bool) {
-	s := strings.TrimSpace(strings.Trim(raw, """))
+	s := strings.TrimSpace(strings.Trim(raw, "\""))
 	if len(s) < 2 || s[1] != ':' {
 		return 0, false
 	}
@@ -44,23 +43,7 @@ func windowsDriveInput(letter byte) string {
 }
 
 func windowsDVDDriveLabel(letter byte) string {
-	root := windowsDriveRoot(letter)
-	rootPtr, _ := syscall.UTF16PtrFromString(root)
-	volume := make([]uint16, 256)
-	r, _, _ := procDVDGetVolumeInfoW.Call(
-		uintptr(unsafe.Pointer(rootPtr)),
-		uintptr(unsafe.Pointer(&volume[0])),
-		uintptr(len(volume)),
-		0, 0, 0, 0, 0,
-	)
-	name := ""
-	if r != 0 {
-		name = syscall.UTF16ToString(volume)
-	}
-	if strings.TrimSpace(name) == "" {
-		return fmt.Sprintf("DVD Drive %c:", letter)
-	}
-	return fmt.Sprintf("%s (%c:)", name, letter)
+	return fmt.Sprintf("DVD Drive %c:", letter)
 }
 
 func resolvePhysicalDVDDrive(raw string) (dvdDrive, bool, error) {
@@ -73,7 +56,7 @@ func resolvePhysicalDVDDrive(raw string) (dvdDrive, bool, error) {
 	if t != driveCDROM {
 		return dvdDrive{}, false, nil
 	}
-	return dvdDrive{Input: windowsDriveInput(letter), Label: windowsDVDDriveLabel(letter)}, true, nil
+	return dvdDrive{Input: windowsDriveInput(letter), Label: windowsDVDDriveLabel(letter), BaseName: fmt.Sprintf("DVD-%c", letter)}, true, nil
 }
 
 func platformDVDDrives() ([]dvdDrive, error) {
@@ -82,7 +65,7 @@ func platformDVDDrives() ([]dvdDrive, error) {
 		rootPtr, _ := syscall.UTF16PtrFromString(windowsDriveRoot(letter))
 		t, _, _ := procDVDGetDriveTypeW.Call(uintptr(unsafe.Pointer(rootPtr)))
 		if t == driveCDROM {
-			drives = append(drives, dvdDrive{Input: windowsDriveInput(letter), Label: windowsDVDDriveLabel(letter)})
+			drives = append(drives, dvdDrive{Input: windowsDriveInput(letter), Label: windowsDVDDriveLabel(letter), BaseName: fmt.Sprintf("DVD-%c", letter)})
 		}
 	}
 	return drives, nil
