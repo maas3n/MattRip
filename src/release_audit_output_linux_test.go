@@ -25,7 +25,7 @@ func auditRemux(t *testing.T, body string) (string, error, string) {
 		t.Fatal(err)
 	}
 	final := filepath.Join(out, "disc.mkv")
-	t.Setenv("MATTMUX_AUDIT_FINAL", final)
+	t.Setenv("MATTRIP_AUDIT_FINAL", final)
 	tool := filepath.Join(root, "ffmpeg-fixture")
 	if err := os.WriteFile(tool, []byte("#!/bin/sh\nfor arg do last=\"$arg\"; done\n"+body), 0700); err != nil {
 		t.Fatal(err)
@@ -45,7 +45,7 @@ func TestRemuxRejectsEmptyOutput(t *testing.T) {
 }
 
 func TestRemuxPreservesNewlyAppearingDestination(t *testing.T) {
-	f, err, out := auditRemux(t, "printf 'new output' > \"$last\"\nprintf 'other writer' > \"$MATTMUX_AUDIT_FINAL\"\n")
+	f, err, out := auditRemux(t, "printf 'new output' > \"$last\"\nprintf 'other writer' > \"$MATTRIP_AUDIT_FINAL\"\n")
 	b, readErr := os.ReadFile(filepath.Join(out, "disc.mkv"))
 	if readErr != nil {
 		t.Fatal(readErr)
