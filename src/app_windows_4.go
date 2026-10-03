@@ -230,16 +230,5 @@ func sanitizeFilename(s string) string {
 	return s
 }
 func mediaInfoTarget(src string) string {
-	info, err := os.Stat(src)
-	if err != nil {
-		return ""
-	}
-	if !info.IsDir() {
-		return src
-	}
-	p := filepath.Join(src, "VIDEO_TS", "VIDEO_TS.IFO")
-	if fileExists(p) {
-		return p
-	}
-	return ""
+	return dvdSourceMediaInfoTarget(src)
 }
