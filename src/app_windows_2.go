@@ -71,7 +71,7 @@ func startAsync(label string, fn func(context.Context) error) {
 		if err != nil && !cancelled {
 			log.Printf("operation failed: %v", err)
 			setStatus("Failed: " + firstLine(err.Error()))
-			messageBox(app.hwnd, "MattMux", err.Error(), MB_OK|MB_ICONERROR)
+			messageBox(app.hwnd, "MattRip", err.Error(), MB_OK|MB_ICONERROR)
 		} else if cancelled {
 			log.Printf("operation cancelled")
 			setStatus("Operation cancelled.")
@@ -142,7 +142,7 @@ func discoverDVDTitlesViaDVDVideo(ctx context.Context) error {
 
 	// FFmpeg's dvdvideo demuxer accepts title numbers 1..99 and uses
 	// libdvdread/libdvdnav as its source of truth. Deliberately probe the full
-	// title-number range instead of parsing VIDEO_TS.IFO in MattMux. This keeps
+	// title-number range instead of parsing VIDEO_TS.IFO in MattRip. This keeps
 	// folder and ISO title discovery on the same libdvdread/libdvdnav path.
 	maxTitle := 99
 
@@ -225,7 +225,7 @@ func showMetadata(ctx context.Context) error {
 	}
 	setProgress(.7)
 	var b strings.Builder
-	fmt.Fprintf(&b, "MattMux — DVD title %d\r\nDuration: %s\r\n\r\n", t.Number, formatDuration(t.Duration))
+	fmt.Fprintf(&b, "MattRip — DVD title %d\r\nDuration: %s\r\n\r\n", t.Number, formatDuration(t.Duration))
 	videoN, audioN, subN := 0, 0, 0
 	for _, s := range probe.Streams {
 		lang := strings.TrimSpace(s.Tags["language"])

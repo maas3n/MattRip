@@ -22,15 +22,15 @@ permissions:
 env:
   FFMPEG_VERSION: '9.0.1'
   ANDROID_NDK_VERSION: '30.0.16248370'
-  MATTMUX_CI_VERSION_NAME: '0.0.0-dev'
-  MATTMUX_CI_VERSION_CODE: '1'
+  MATTRIP_CI_VERSION_NAME: '0.0.0-dev'
+  MATTRIP_CI_VERSION_CODE: '1'
 
 jobs:
   startup:
     needs: build
     uses: ./.github/workflows/android-startup.yml
     with:
-      artifact: MattMux-Android-ChromeOS-dev
+      artifact: MattRip-Android-ChromeOS-dev
 
   build:
     runs-on: ubuntu-latest
@@ -95,8 +95,8 @@ jobs:
       - name: Test, lint and build development artifacts
         run: |
           gradle -p android \
-            -PMATTMUX_VERSION_NAME="${MATTMUX_CI_VERSION_NAME}" \
-            -PMATTMUX_VERSION_CODE="${MATTMUX_CI_VERSION_CODE}" \
+            -PMATTRIP_VERSION_NAME="${MATTRIP_CI_VERSION_NAME}" \
+            -PMATTRIP_VERSION_CODE="${MATTRIP_CI_VERSION_CODE}" \
             :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:bundleRelease
 
       - name: Verify bundled native libraries and development version
@@ -109,8 +109,8 @@ jobs:
           test -n "${AAB}"
 
           BADGING="$("${ANDROID_HOME}/build-tools/36.0.0/aapt" dump badging "${APK}")"
-          grep -Fq "versionCode='${MATTMUX_CI_VERSION_CODE}'" <<<"${BADGING}"
-          grep -Fq "versionName='${MATTMUX_CI_VERSION_NAME}'" <<<"${BADGING}"
+          grep -Fq "versionCode='${MATTRIP_CI_VERSION_CODE}'" <<<"${BADGING}"
+          grep -Fq "versionName='${MATTRIP_CI_VERSION_NAME}'" <<<"${BADGING}"
 
           python3 android/native/verify-package.py "${APK}" "${AAB}"
 
@@ -123,7 +123,7 @@ jobs:
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: MattMux-Android-ChromeOS-dev
+          name: MattRip-Android-ChromeOS-dev
           if-no-files-found: error
           path: |
             android/app/build/outputs/apk/debug/*.apk

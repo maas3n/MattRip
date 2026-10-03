@@ -10,13 +10,13 @@ import (
 
 func TestResolveAppDataRootPrefersPortableDirectory(t *testing.T) {
 	root := t.TempDir()
-	portable := filepath.Join(root, "MattMuxData")
+	portable := filepath.Join(root, "MattRipData")
 	if err := os.MkdirAll(portable, 0755); err != nil {
 		t.Fatal(err)
 	}
 
 	got := resolveAppDataRootFor(
-		filepath.Join(root, "MattMux-Portable.exe"),
+		filepath.Join(root, "MattRip-Portable.exe"),
 		filepath.Join(root, "LocalAppData"),
 		filepath.Join(root, "Home"),
 	)
@@ -28,10 +28,10 @@ func TestResolveAppDataRootPrefersPortableDirectory(t *testing.T) {
 func TestResolveAppDataRootFallsBackToLocalAppData(t *testing.T) {
 	root := t.TempDir()
 	local := filepath.Join(root, "LocalAppData")
-	want := filepath.Join(local, "MattMux")
+	want := filepath.Join(local, "MattRip")
 
 	got := resolveAppDataRootFor(
-		filepath.Join(root, "MattMux.exe"),
+		filepath.Join(root, "MattRip.exe"),
 		local,
 		filepath.Join(root, "Home"),
 	)

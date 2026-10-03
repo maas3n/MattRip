@@ -18,7 +18,7 @@ reported device failure was introduced by v1.4.18.
 ## Change
 
 - Read NAV PCI/DSI with libdvdread and identify continuous clock segments.
-  No MattMux IFO parser is introduced.
+  No MattRip IFO parser is introduced.
 - Probe the complete title for track discovery, then isolate MPEG parser and
   GENPTS lookahead at clock boundaries. Preserve one common origin and apply
   NAV-derived offsets equally to video, audio, and subtitles. Do not clamp each

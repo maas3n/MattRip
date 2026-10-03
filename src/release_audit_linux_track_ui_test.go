@@ -33,7 +33,7 @@ func TestLinuxReleaseKeepsModalTrackSelector(t *testing.T) {
 			t.Fatalf("Linux release track-selection UI is missing %q", required)
 		}
 	}
-	if strings.Contains(src, `fyne.CurrentApp().NewWindow(fmt.Sprintf("MattMux — Title`) {
+	if strings.Contains(src, `fyne.CurrentApp().NewWindow(fmt.Sprintf("MattRip — Title`) {
 		t.Fatal("Linux track selector must remain parented to the main window, not a detached OS window")
 	}
 	if strings.Contains(src, `details.Disable()`) {

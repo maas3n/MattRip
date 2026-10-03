@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 env:
-  MATTMUX_CI_VERSION: '0.0.0-dev'
+  MATTRIP_CI_VERSION: '0.0.0-dev'
 
 jobs:
   build-linux:
@@ -54,10 +54,10 @@ jobs:
         working-directory: src
         run: |
           go test -tags cli ./...
-          go build -tags cli -trimpath -o /tmp/mattmux-cli .
-          /tmp/mattmux-cli --version
-          /tmp/mattmux-cli --help >/tmp/mattmux-help.txt 2>&1 || true
-          grep -F -- '--batch' /tmp/mattmux-help.txt
+          go build -tags cli -trimpath -o /tmp/mattrip-cli .
+          /tmp/mattrip-cli --version
+          /tmp/mattrip-cli --help >/tmp/mattrip-help.txt 2>&1 || true
+          grep -F -- '--batch' /tmp/mattrip-help.txt
 
       - name: Validate Debian preview version ordering
         run: |
@@ -69,7 +69,7 @@ jobs:
       - name: Author real two-title VIDEO_TS fixture
         run: |
           set -euo pipefail
-          work="$RUNNER_TEMP/mattmux-batch-e2e"
+          work="$RUNNER_TEMP/mattrip-batch-e2e"
           root="$work/movies"
           movie="$root/Integration Movie"
           out="$work/out"
@@ -122,63 +122,63 @@ jobs:
       - name: Build GUI, CLI, self-contained DEB, tarballs and standalone
         run: |
           set -euo pipefail
-          bash packaging/linux/build-linux-release.sh "$MATTMUX_CI_VERSION"
-          bash packaging/linux/build-linux-standalone.sh "$MATTMUX_CI_VERSION"
+          bash packaging/linux/build-linux-release.sh "$MATTRIP_CI_VERSION"
+          bash packaging/linux/build-linux-standalone.sh "$MATTRIP_CI_VERSION"
 
       - name: Inspect and validate Debian package
         run: |
           set -euo pipefail
-          deb="dist/linux-release/MattMux-$MATTMUX_CI_VERSION-Linux-amd64.deb"
+          deb="dist/linux-release/MattRip-$MATTRIP_CI_VERSION-Linux-amd64.deb"
           dpkg-deb --info "$deb"
           dpkg-deb -f "$deb" Depends | grep -F 'libc6 (>= 2.38)'
           dpkg-deb --contents "$deb"
           tmp="$(mktemp -d)"
           trap 'rm -rf "$tmp"' EXIT
           dpkg-deb --extract "$deb" "$tmp"
-          test -x "$tmp/usr/bin/mattmux"
-          test -x "$tmp/usr/bin/mattmux-cli"
-          test -x "$tmp/usr/lib/mattmux/app/mattmux-bin"
-          test -x "$tmp/usr/lib/mattmux/app/mattmux-cli-bin"
-          test -x "$tmp/usr/lib/mattmux/ffmpeg-bin/ffmpeg"
-          test -x "$tmp/usr/lib/mattmux/ffmpeg-bin/ffprobe"
-          test -x "$tmp/usr/lib/mattmux/mediainfo-bin/mediainfo"
+          test -x "$tmp/usr/bin/mattrip"
+          test -x "$tmp/usr/bin/mattrip-cli"
+          test -x "$tmp/usr/lib/mattrip/app/mattrip-bin"
+          test -x "$tmp/usr/lib/mattrip/app/mattrip-cli-bin"
+          test -x "$tmp/usr/lib/mattrip/ffmpeg-bin/ffmpeg"
+          test -x "$tmp/usr/lib/mattrip/ffmpeg-bin/ffprobe"
+          test -x "$tmp/usr/lib/mattrip/mediainfo-bin/mediainfo"
           test ! -e "$tmp/usr/bin/ffmpeg"
           test ! -e "$tmp/usr/bin/ffprobe"
           test ! -e "$tmp/usr/bin/mediainfo"
-          grep -F 'PATH="$FFDIR:$MIDIR:$PATH"' "$tmp/usr/bin/mattmux"
-          grep -F 'PATH="$FFDIR:$MIDIR:$PATH"' "$tmp/usr/bin/mattmux-cli"
-          ! grep -q 'command -v ffmpeg' "$tmp/usr/bin/mattmux"
-          ! grep -q 'command -v ffmpeg' "$tmp/usr/bin/mattmux-cli"
-          "$tmp/usr/lib/mattmux/ffmpeg-bin/ffmpeg" -hide_banner -demuxers 2>/dev/null | grep dvdvideo
-          "$tmp/usr/lib/mattmux/ffmpeg-bin/ffprobe" -version | head -n 1
-          "$tmp/usr/lib/mattmux/mediainfo-bin/mediainfo" --Version | head -n 4
+          grep -F 'PATH="$FFDIR:$MIDIR:$PATH"' "$tmp/usr/bin/mattrip"
+          grep -F 'PATH="$FFDIR:$MIDIR:$PATH"' "$tmp/usr/bin/mattrip-cli"
+          ! grep -q 'command -v ffmpeg' "$tmp/usr/bin/mattrip"
+          ! grep -q 'command -v ffmpeg' "$tmp/usr/bin/mattrip-cli"
+          "$tmp/usr/lib/mattrip/ffmpeg-bin/ffmpeg" -hide_banner -demuxers 2>/dev/null | grep dvdvideo
+          "$tmp/usr/lib/mattrip/ffmpeg-bin/ffprobe" -version | head -n 1
+          "$tmp/usr/lib/mattrip/mediainfo-bin/mediainfo" --Version | head -n 4
 
       - name: Real VIDEO_TS one-click batch integration
         run: |
           set -euo pipefail
-          work="$RUNNER_TEMP/mattmux-batch-e2e"
+          work="$RUNNER_TEMP/mattrip-batch-e2e"
           root="$work/movies"
           out="$work/out"
           log="$work/batch.log"
-          deb="dist/linux-release/MattMux-$MATTMUX_CI_VERSION-Linux-amd64.deb"
+          deb="dist/linux-release/MattRip-$MATTRIP_CI_VERSION-Linux-amd64.deb"
           pkg="$work/pkg"
           dpkg-deb --extract "$deb" "$pkg"
-          cli="$pkg/usr/lib/mattmux/app/mattmux-cli-bin"
-          ffprobe="$pkg/usr/lib/mattmux/ffmpeg-bin/ffprobe"
-          ffmpeg_private="$pkg/usr/lib/mattmux/ffmpeg-bin/ffmpeg"
+          cli="$pkg/usr/lib/mattrip/app/mattrip-cli-bin"
+          ffprobe="$pkg/usr/lib/mattrip/ffmpeg-bin/ffprobe"
+          ffmpeg_private="$pkg/usr/lib/mattrip/ffmpeg-bin/ffmpeg"
           test -x "$cli"
           test -x "$ffprobe"
           "$ffmpeg_private" -hide_banner -demuxers 2>&1 | tee "$work/demuxers.txt"
           grep -F dvdvideo "$work/demuxers.txt"
 
           set +e
-          PATH="$pkg/usr/lib/mattmux/ffmpeg-bin:$pkg/usr/lib/mattmux/mediainfo-bin:$PATH" \
+          PATH="$pkg/usr/lib/mattrip/ffmpeg-bin:$pkg/usr/lib/mattrip/mediainfo-bin:$PATH" \
             "$cli" --batch --log="$log" "$root" "$out"
           batch_rc=$?
           set -e
           cat "$log" || true
           if [[ $batch_rc -ne 0 ]]; then
-            echo "mattmux-cli batch failed with exit code $batch_rc" >&2
+            echo "mattrip-cli batch failed with exit code $batch_rc" >&2
             exit "$batch_rc"
           fi
 
@@ -194,10 +194,10 @@ jobs:
       - name: Real unmounted ISO, CLI streams and Advanced Merger parity
         run: |
           set -euo pipefail
-          work="$RUNNER_TEMP/mattmux-batch-e2e"
+          work="$RUNNER_TEMP/mattrip-batch-e2e"
           pkg="$work/pkg"
-          export PATH="$pkg/usr/lib/mattmux/ffmpeg-bin:$pkg/usr/lib/mattmux/mediainfo-bin:$PATH"
-          cli="$pkg/usr/lib/mattmux/app/mattmux-cli-bin"
+          export PATH="$pkg/usr/lib/mattrip/ffmpeg-bin:$pkg/usr/lib/mattrip/mediainfo-bin:$PATH"
+          cli="$pkg/usr/lib/mattrip/app/mattrip-cli-bin"
           mkdir -p "$work/isos" "$work/selected"
           genisoimage -quiet -dvd-video -udf -o "$work/isos/Integration.iso" "$work/movies/Integration Movie"
           "$cli" scan "$work/isos/Integration.iso"
@@ -209,19 +209,19 @@ jobs:
           test -s "$selected"
           test "$(ffprobe -v error -show_entries stream=index -of csv=p=0 "$selected" | wc -l)" -eq 1
           test -z "$(ffprobe -v error -show_entries chapter=id -of csv=p=0 "$selected")"
-          export MATTMUX_TEST_DVD_ISO="$work/isos/Integration.iso"
-          export MATTMUX_TEST_DVD_FOLDER="$work/movies/Integration Movie"
+          export MATTRIP_TEST_DVD_ISO="$work/isos/Integration.iso"
+          export MATTRIP_TEST_DVD_FOLDER="$work/movies/Integration Movie"
           (cd src && go test -tags cli -run TestRealDVDISOParity -v .)
           python3 android/native/tests/make-dvd-demux-fixture.py "$work/demux-dvd"
           genisoimage -quiet -dvd-video -udf -o "$work/demux-dvd.iso" "$work/demux-dvd/dvd"
-          export MATTMUX_TEST_DEMUX_DVD="$work/demux-dvd/dvd"
-          export MATTMUX_TEST_DEMUX_ISO="$work/demux-dvd.iso"
+          export MATTRIP_TEST_DEMUX_DVD="$work/demux-dvd/dvd"
+          export MATTRIP_TEST_DEMUX_ISO="$work/demux-dvd.iso"
           (cd src && go test -tags cli -run TestAuthoredDVDTabDemux -v .)
 
       - name: Validate single-file standalone executable
         run: |
           set -euo pipefail
-          standalone="dist/linux-release/MattMux-$MATTMUX_CI_VERSION-Linux-amd64Standalone"
+          standalone="dist/linux-release/MattRip-$MATTRIP_CI_VERSION-Linux-amd64Standalone"
           test -x "$standalone"
           file "$standalone" | grep -E 'ELF 64-bit.*x86-64'
           cache="$(mktemp -d)"
@@ -229,15 +229,15 @@ jobs:
           XDG_CACHE_HOME="$cache" "$standalone" --standalone-self-test
           python3 packaging/linux/test-standalone-libs.py
           bash packaging/linux/test-standalone-clean.sh "$standalone"
-          test -x "$cache/mattmux/standalone/"*/mattmux-bin
-          test -x "$cache/mattmux/standalone/"*/ffmpeg
-          test -x "$cache/mattmux/standalone/"*/ffprobe
-          test -x "$cache/mattmux/standalone/"*/mediainfo
+          test -x "$cache/mattrip/standalone/"*/mattrip-bin
+          test -x "$cache/mattrip/standalone/"*/ffmpeg
+          test -x "$cache/mattrip/standalone/"*/ffprobe
+          test -x "$cache/mattrip/standalone/"*/mediainfo
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: MattMux-Linux-amd64-dev
+          name: MattRip-Linux-amd64-dev
           path: |
             dist/linux-release/*.deb
             dist/linux-release/*.tar.gz

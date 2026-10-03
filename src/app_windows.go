@@ -12,8 +12,7 @@ import (
 )
 
 const (
-	appName    = "MattMux"
-	appVersion = "1.2.0"
+	appName = "MattRip"
 
 	// Fixed, immutable FFmpeg autobuild. We verify the release checksum manifest
 	// against this hard-coded SHA-256 before trusting the archive checksum inside it.
@@ -24,6 +23,8 @@ const (
 	mediaInfoAssetName = "MediaInfo_CLI_26.05_Windows_x64.zip"
 	mediaInfoSHA       = "f7f80620ce6d14f4995f0de6f98e3ef18ad29496db01899571152ee3311229f9"
 )
+
+var appVersion = "dev"
 
 const (
 	WS_OVERLAPPED       = 0x00000000

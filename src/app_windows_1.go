@@ -28,7 +28,7 @@ func windowsGUIMain() {
 	icc := INITCOMMONCONTROLSEX{DwSize: uint32(unsafe.Sizeof(INITCOMMONCONTROLSEX{})), DwICC: ICC_PROGRESS_CLASS | ICC_LISTVIEW_CLASSES | 0x8}
 	procInitCommonControlsEx.Call(uintptr(unsafe.Pointer(&icc)))
 	if err := createMainWindow(); err != nil {
-		messageBox(0, "MattMux could not start", err.Error(), MB_OK|MB_ICONERROR)
+		messageBox(0, "MattRip could not start", err.Error(), MB_OK|MB_ICONERROR)
 		return
 	}
 	var msg MSG
@@ -61,7 +61,7 @@ func scale96(v, dpi int32) int32 {
 
 func createMainWindow() error {
 	hInstance, _, _ := procGetModuleHandleW.Call(0)
-	className := utf16Ptr("MattMuxWindowClass")
+	className := utf16Ptr("MattRipWindowClass")
 	cursor, _, _ := procLoadCursorW.Call(0, 32512)
 	icon := loadAppIcon()
 	// Use the system control background. Stock object 5 is NULL_BRUSH, which
@@ -104,7 +104,7 @@ func createMainWindow() error {
 
 func loadAppIcon() uintptr {
 	if exe, err := os.Executable(); err == nil {
-		iconPath := filepath.Join(filepath.Dir(exe), "MattMux.ico")
+		iconPath := filepath.Join(filepath.Dir(exe), "MattRip.ico")
 		if fileExists(iconPath) {
 			r, _, _ := procLoadImageW.Call(0, uintptr(unsafe.Pointer(utf16Ptr(iconPath))), IMAGE_ICON, 0, 0, LR_LOADFROMFILE|LR_DEFAULTSIZE)
 			if r != 0 {
@@ -140,7 +140,7 @@ func createControls(hwnd, hInstance uintptr) {
 		mergerWindow.dvd = append(mergerWindow.dvd, c)
 		return c
 	}
-	add(0, "STATIC", "MattMux", WS_CHILD|WS_VISIBLE, 28, 22, 300, 42, 0, app.headerFont)
+	add(0, "STATIC", "MattRip", WS_CHILD|WS_VISIBLE, 28, 22, 300, 42, 0, app.headerFont)
 	add(0, "STATIC", "Lossless DVD title remuxing to Matroska — video, audio, subtitles, chapters and metadata.", WS_CHILD|WS_VISIBLE, 30, 64, 750, 24, 0, app.bodyFont)
 	add(0, "BUTTON", "Source", WS_CHILD|WS_VISIBLE|BS_GROUPBOX, 22, 102, 770, 112, 0, app.bodyFont)
 	add(0, "STATIC", "DVD / VIDEO_TS / ISO / MKV", WS_CHILD|WS_VISIBLE, 38, 127, 210, 22, 0, app.bodyFont)
@@ -218,7 +218,7 @@ func windowProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 			}
 		case idOutputBtn:
 			if !app.busy.Load() {
-				if p := browseFolder(hwnd, "Choose where MattMux should save the MKV"); p != "" {
+				if p := browseFolder(hwnd, "Choose where MattRip should save the MKV"); p != "" {
 					setText(app.outputEdit, p)
 					saveCurrentSettings()
 				}
@@ -271,7 +271,7 @@ func windowProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 		return 0
 	case WM_CLOSE:
 		if app.busy.Load() {
-			if messageBox(hwnd, "Operation in progress", "Cancel the current operation and close MattMux?", MB_OKCANCEL|MB_ICONQUESTION) != IDOK {
+			if messageBox(hwnd, "Operation in progress", "Cancel the current operation and close MattRip?", MB_OKCANCEL|MB_ICONQUESTION) != IDOK {
 				return 0
 			}
 			app.cancelCurrent()

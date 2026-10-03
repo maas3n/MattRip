@@ -16,7 +16,7 @@ import (
 )
 
 func TestChooserHelper(t *testing.T) {
-	if os.Getenv("MATTMUX_CHOOSER_TEST") == "" {
+	if os.Getenv("MATTRIP_CHOOSER_TEST") == "" {
 		return
 	}
 	// Keep the scheduler active while Win32 calls block. The chooser must stay
@@ -43,7 +43,7 @@ func TestChooserRespondsToEveryAction(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 20 * time.Second)
 			defer cancel()
 			cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestChooserHelper$")
-			cmd.Env = append(os.Environ(), "MATTMUX_CHOOSER_TEST=1")
+			cmd.Env = append(os.Environ(), "MATTRIP_CHOOSER_TEST=1")
 			var output bytes.Buffer
 			cmd.Stdout, cmd.Stderr = &output, &output
 			if err := cmd.Start(); err != nil {
@@ -52,7 +52,7 @@ func TestChooserRespondsToEveryAction(t *testing.T) {
 			defer cmd.Process.Kill()
 			var hwnd uintptr
 			for deadline := time.Now().Add(10 * time.Second); time.Now().Before(deadline); {
-				hwnd, _, _ = find.Call(uintptr(unsafe.Pointer(utf16Ptr("MattMuxAllInOneWindow"))), 0)
+				hwnd, _, _ = find.Call(uintptr(unsafe.Pointer(utf16Ptr("MattRipAllInOneWindow"))), 0)
 				var pid uint32
 				owner.Call(hwnd, uintptr(unsafe.Pointer(&pid)))
 				if hwnd != 0 && pid == uint32(cmd.Process.Pid) {

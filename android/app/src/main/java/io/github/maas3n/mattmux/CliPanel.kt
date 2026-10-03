@@ -28,16 +28,16 @@ class CliPanel(private val activity: Activity) {
     @Volatile private var busy = false
     @Volatile private var destroyed = false
 
-    private val command = EditText(activity).apply { setText("mattmux-cli --help"); minLines = 2 }
+    private val command = EditText(activity).apply { setText("mattrip-cli --help"); minLines = 2 }
     private val progress = ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal).apply { max = 100 }
-    private val console = TextView(activity).apply { text = "Android mattmux-cli ready. Pick a DVD folder or ISO, choose a command preset, then edit the command if needed." }
+    private val console = TextView(activity).apply { text = "Android mattrip-cli ready. Pick a DVD folder or ISO, choose a command preset, then edit the command if needed." }
     private val cancel = Button(activity).apply { text = "Cancel"; isEnabled = false; setOnClickListener { runner.cancel(); append("Cancelling…") } }
     val view: View
 
     init {
         val padding = (24 * activity.resources.displayMetrics.density).toInt()
         val content = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL; setPadding(padding, padding, padding, padding) }
-        content.addView(TextView(activity).apply { text = "mattmux-cli"; textSize = 20f })
+        content.addView(TextView(activity).apply { text = "mattrip-cli"; textSize = 20f })
         content.addView(TextView(activity).apply {
             text = "Native Android CLI surface: scan, metadata, remux and --batch. Android storage uses persisted content:// URIs instead of shell filesystem paths."
         })
@@ -54,7 +54,7 @@ class CliPanel(private val activity: Activity) {
         button("PRESET: BATCH") { preset = Preset.BATCH; refreshCommand() }
 
         content.addView(command); controls += command
-        button("RUN mattmux-cli") { runCommand() }
+        button("RUN mattrip-cli") { runCommand() }
         content.addView(cancel)
         content.addView(progress)
         content.addView(console)
@@ -100,22 +100,22 @@ class CliPanel(private val activity: Activity) {
     private fun refreshCommand() {
         val src = source
         val text = when (preset) {
-            Preset.HELP -> "mattmux-cli --help"
-            Preset.SCAN -> src?.let { "mattmux-cli scan \"$it\"" } ?: "mattmux-cli scan SOURCE"
-            Preset.METADATA -> src?.let { "mattmux-cli metadata \"$it\"" } ?: "mattmux-cli metadata SOURCE"
+            Preset.HELP -> "mattrip-cli --help"
+            Preset.SCAN -> src?.let { "mattrip-cli scan \"$it\"" } ?: "mattrip-cli scan SOURCE"
+            Preset.METADATA -> src?.let { "mattrip-cli metadata \"$it\"" } ?: "mattrip-cli metadata SOURCE"
             Preset.REMUX -> src?.let {
                 buildString {
-                    append("mattmux-cli remux")
+                    append("mattrip-cli remux")
                     output?.let { out -> append(" --output \""); append(out); append('"') }
                     append(" \""); append(it); append('"')
                 }
-            } ?: "mattmux-cli remux SOURCE"
+            } ?: "mattrip-cli remux SOURCE"
             Preset.BATCH -> src?.let {
                 buildString {
-                    append("mattmux-cli --batch \""); append(it); append('"')
+                    append("mattrip-cli --batch \""); append(it); append('"')
                     output?.let { out -> append(" \""); append(out); append('"') }
                 }
-            } ?: "mattmux-cli --batch MOVIES_ROOT"
+            } ?: "mattrip-cli --batch MOVIES_ROOT"
         }
         command.setText(text)
     }
@@ -139,10 +139,10 @@ class CliPanel(private val activity: Activity) {
                 busy = false
                 controls.forEach { it.isEnabled = true }
                 cancel.isEnabled = false
-                result.onSuccess { code -> append("mattmux-cli exit code: $code") }
-                    .onFailure { append("mattmux-cli error: ${it.message ?: it.javaClass.simpleName}") }
+                result.onSuccess { code -> append("mattrip-cli exit code: $code") }
+                    .onFailure { append("mattrip-cli error: ${it.message ?: it.javaClass.simpleName}") }
             }
-        }.apply { name = "MattMux-Android-CLI" }.start()
+        }.apply { name = "MattRip-Android-CLI" }.start()
     }
 
     private fun append(line: String) {

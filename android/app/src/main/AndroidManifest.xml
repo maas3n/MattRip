@@ -15,7 +15,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MattMux">
         <activity
-            android:name=".MainActivity"
+            android:name="io.github.maas3n.mattmux.MainActivity"
             android:exported="true"
             android:resizeableActivity="true">
             <intent-filter>

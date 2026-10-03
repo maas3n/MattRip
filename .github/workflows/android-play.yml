@@ -80,8 +80,8 @@ jobs:
           KEYSTORE_B64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
         run: |
           set -euo pipefail
-          printf '%s' "$KEYSTORE_B64" | base64 --decode > "${RUNNER_TEMP}/mattmux-upload.jks"
-          test -s "${RUNNER_TEMP}/mattmux-upload.jks"
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "${RUNNER_TEMP}/mattrip-upload.jks"
+          test -s "${RUNNER_TEMP}/mattrip-upload.jks"
 
       - name: Build bundled LGPL FFmpeg runtime
         run: |
@@ -90,14 +90,14 @@ jobs:
 
       - name: Test, lint and build signed bundle
         env:
-          ORG_GRADLE_PROJECT_MATTMUX_UPLOAD_STORE_FILE: ${{ runner.temp }}/mattmux-upload.jks
-          ORG_GRADLE_PROJECT_MATTMUX_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
-          ORG_GRADLE_PROJECT_MATTMUX_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
-          ORG_GRADLE_PROJECT_MATTMUX_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+          ORG_GRADLE_PROJECT_MATTRIP_UPLOAD_STORE_FILE: ${{ runner.temp }}/mattrip-upload.jks
+          ORG_GRADLE_PROJECT_MATTRIP_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_MATTRIP_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          ORG_GRADLE_PROJECT_MATTRIP_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
         run: |
           gradle -p android \
-            -PMATTMUX_VERSION_NAME='${{ inputs.version_name }}' \
-            -PMATTMUX_VERSION_CODE='${{ inputs.version_code }}' \
+            -PMATTRIP_VERSION_NAME='${{ inputs.version_name }}' \
+            -PMATTRIP_VERSION_CODE='${{ inputs.version_code }}' \
             :app:testDebugUnitTest :app:lintRelease :app:bundleRelease
 
       - name: Verify signed AAB
@@ -114,6 +114,6 @@ jobs:
       - name: Upload signed Play bundle
         uses: actions/upload-artifact@v4
         with:
-          name: MattMux-${{ inputs.version_name }}-Android-ChromeOS-Play-AAB
+          name: MattRip-${{ inputs.version_name }}-Android-ChromeOS-Play-AAB
           if-no-files-found: error
           path: android/app/build/outputs/bundle/release/*.aab

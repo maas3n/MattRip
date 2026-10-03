@@ -31,7 +31,7 @@ class BillingManager(
     )
 
     companion object {
-        const val PRO_PRODUCT_ID = "mattmux_pro"
+        const val PRO_PRODUCT_ID = "mattrip_pro"
     }
 
     private var productDetails: ProductDetails? = null
@@ -85,7 +85,7 @@ class BillingManager(
         }
 
         val details = productDetails ?: run {
-            update(state.copy(message = "MattMux Pro is not available from Google Play yet."))
+            update(state.copy(message = "MattRip Pro is not available from Google Play yet."))
             return null
         }
 
@@ -121,7 +121,7 @@ class BillingManager(
 
         billingClient.queryProductDetailsAsync(params) { result, detailsResult ->
             if (result.responseCode != BillingClient.BillingResponseCode.OK) {
-                update(state.copy(message = "Could not load MattMux Pro pricing."))
+                update(state.copy(message = "Could not load MattRip Pro pricing."))
                 return@queryProductDetailsAsync
             }
 
@@ -168,7 +168,7 @@ class BillingManager(
                     }
                 }
                 Purchase.PurchaseState.PENDING -> {
-                    update(state.copy(message = "MattMux Pro purchase is pending."))
+                    update(state.copy(message = "MattRip Pro purchase is pending."))
                 }
             }
         }
@@ -176,7 +176,7 @@ class BillingManager(
         update(
             state.copy(
                 proOwned = ownsPro,
-                message = if (ownsPro) "MattMux Pro unlocked." else state.message,
+                message = if (ownsPro) "MattRip Pro unlocked." else state.message,
             )
         )
     }

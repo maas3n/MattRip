@@ -2,18 +2,18 @@ plugins {
     id("com.android.application")
 }
 
-val mattMuxVersionName = providers.gradleProperty("MATTMUX_VERSION_NAME")
+val mattRipVersionName = providers.gradleProperty("MATTRIP_VERSION_NAME")
     .orElse("0.0.0-dev")
     .get()
-val mattMuxVersionCode = providers.gradleProperty("MATTMUX_VERSION_CODE")
+val mattRipVersionCode = providers.gradleProperty("MATTRIP_VERSION_CODE")
     .orElse("1")
     .get()
     .toInt()
 
-val playStoreFile = providers.gradleProperty("MATTMUX_UPLOAD_STORE_FILE").orNull
-val playStorePassword = providers.gradleProperty("MATTMUX_UPLOAD_STORE_PASSWORD").orNull
-val playKeyAlias = providers.gradleProperty("MATTMUX_UPLOAD_KEY_ALIAS").orNull
-val playKeyPassword = providers.gradleProperty("MATTMUX_UPLOAD_KEY_PASSWORD").orNull
+val playStoreFile = providers.gradleProperty("MATTRIP_UPLOAD_STORE_FILE").orNull
+val playStorePassword = providers.gradleProperty("MATTRIP_UPLOAD_STORE_PASSWORD").orNull
+val playKeyAlias = providers.gradleProperty("MATTRIP_UPLOAD_KEY_ALIAS").orNull
+val playKeyPassword = providers.gradleProperty("MATTRIP_UPLOAD_KEY_PASSWORD").orNull
 val hasPlaySigning = listOf(
     playStoreFile,
     playStorePassword,
@@ -26,11 +26,11 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "io.github.maas3n.mattmux"
+        applicationId = "io.github.maas3n.mattrip"
         minSdk = 26
         targetSdk = 36
-        versionCode = mattMuxVersionCode
-        versionName = mattMuxVersionName
+        versionCode = mattRipVersionCode
+        versionName = mattRipVersionName
 
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")

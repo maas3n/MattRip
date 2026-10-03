@@ -24,7 +24,7 @@ var appVersion = "dev"
 
 // The release script stages the built GUI and pinned multimedia tools here
 // immediately before compiling this launcher. The resulting ELF is a single
-// self-extracting MattMux executable.
+// self-extracting MattRip executable.
 //
 //go:embed all:payload
 var payloadFS embed.FS
@@ -72,22 +72,22 @@ func main() {
 		if err := selfTest(root, env); err != nil {
 			fatal(err.Error())
 		}
-		fmt.Printf("MattMux %s standalone self-test: OK\n", appVersion)
+		fmt.Printf("MattRip %s standalone self-test: OK\n", appVersion)
 		return
 	}
 
-	app := filepath.Join(root, "mattmux-bin")
+	app := filepath.Join(root, "mattrip-bin")
 	userArgs := os.Args[1:]
 	if len(userArgs) > 0 {
 		switch userArgs[0] {
 		case "--cli":
-			app = filepath.Join(root, "mattmux-cli-bin")
+			app = filepath.Join(root, "mattrip-cli-bin")
 			userArgs = userArgs[1:]
 		case "scan", "metadata", "remux", "--batch", "--version", "--help", "tools", "doctor":
-			app = filepath.Join(root, "mattmux-cli-bin")
+			app = filepath.Join(root, "mattrip-cli-bin")
 		}
 	}
-	if app == filepath.Join(root, "mattmux-bin") && os.Getenv("DISPLAY") != "" {
+	if app == filepath.Join(root, "mattrip-bin") && os.Getenv("DISPLAY") != "" {
 		env, err = graphicsEnv(root, env)
 		if err != nil {
 			fatal(err.Error())
@@ -95,7 +95,7 @@ func main() {
 	}
 	args := append([]string{app}, userArgs...)
 	if err := syscall.Exec(app, args, env); err != nil {
-		fatal(fmt.Sprintf("could not start MattMux: %v", err))
+		fatal(fmt.Sprintf("could not start MattRip: %v", err))
 	}
 }
 
@@ -125,7 +125,7 @@ func graphicsEnv(root string, env []string) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not initialize OpenGL using either the system driver or bundled software renderer. Check that your desktop/WSLg display is available.\nSystem: %s\nSoftware: %s", first, second)
 	}
-	fmt.Fprintln(os.Stderr, "MattMux: using bundled software rendering for this display")
+	fmt.Fprintln(os.Stderr, "MattRip: using bundled software rendering for this display")
 	return fallback, nil
 }
 
@@ -153,7 +153,7 @@ func extractPayload() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	root := filepath.Join(cache, "mattmux", "standalone", appVersion+"-"+fingerprint[:16])
+	root := filepath.Join(cache, "mattrip", "standalone", appVersion+"-"+fingerprint[:16])
 	if err := os.MkdirAll(root, 0o700); err != nil {
 		return "", fmt.Errorf("could not create standalone cache: %w", err)
 	}
@@ -248,7 +248,7 @@ func replaceEnv(env []string, key, value string) []string {
 func selfTest(root string, env []string) error {
 	// Ask the host ELF loader to resolve the GUI and bundled libraries. This
 	// catches missing GUI dependencies without requiring a running display or ldd.
-	app := filepath.Join(root, "mattmux-bin")
+	app := filepath.Join(root, "mattrip-bin")
 	binary, err := elf.Open(app)
 	if err != nil {
 		return fmt.Errorf("invalid GUI ELF executable: %w", err)
@@ -266,7 +266,7 @@ func selfTest(root string, env []string) error {
 	}
 	if loader != "" {
 		for _, p := range payload {
-			if p.name != "mattmux-bin" && p.name != "graphics-probe" && !strings.HasPrefix(p.name, "lib/") && !strings.HasPrefix(p.name, "software/") {
+			if p.name != "mattrip-bin" && p.name != "graphics-probe" && !strings.HasPrefix(p.name, "lib/") && !strings.HasPrefix(p.name, "software/") {
 				continue
 			}
 			cmd := exec.Command(loader, "--list", filepath.Join(root, p.name))
@@ -281,7 +281,7 @@ func selfTest(root string, env []string) error {
 		}
 	}
 	checks := [][]string{
-		{filepath.Join(root, "mattmux-cli-bin"), "--help"},
+		{filepath.Join(root, "mattrip-cli-bin"), "--help"},
 		{filepath.Join(root, "ffmpeg"), "-hide_banner", "-version"},
 		{filepath.Join(root, "ffprobe"), "-hide_banner", "-version"},
 		{filepath.Join(root, "mediainfo"), "--Version"},
@@ -298,6 +298,6 @@ func selfTest(root string, env []string) error {
 }
 
 func fatal(msg string) {
-	fmt.Fprintln(os.Stderr, "MattMux standalone:", msg)
+	fmt.Fprintln(os.Stderr, "MattRip standalone:", msg)
 	os.Exit(1)
 }

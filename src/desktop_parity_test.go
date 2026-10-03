@@ -13,7 +13,7 @@ import (
 )
 
 func TestDesktopCLIArguments(t *testing.T) {
-	got, err := splitCLICommand(`mattmux-cli remux "C:\Movie Files\Alien.iso" --streams 0,2 --no-chapters`)
+	got, err := splitCLICommand(`mattrip-cli remux "C:\Movie Files\Alien.iso" --streams 0,2 --no-chapters`)
 	if err != nil || len(got) != 5 || got[1] != `C:\Movie Files\Alien.iso` {
 		t.Fatalf("%v %v", got, err)
 	}
@@ -89,9 +89,9 @@ func TestMergerKeepsSelectedDVDTitle(t *testing.T) {
 
 // CI supplies an authored two-title ISO and the exact bundled DVD-capable tools.
 func TestRealDVDISOParity(t *testing.T) {
-	iso := os.Getenv("MATTMUX_TEST_DVD_ISO")
+	iso := os.Getenv("MATTRIP_TEST_DVD_ISO")
 	if iso == "" {
-		t.Skip("set MATTMUX_TEST_DVD_ISO to an authored two-title DVD ISO")
+		t.Skip("set MATTRIP_TEST_DVD_ISO to an authored two-title DVD ISO")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
@@ -136,7 +136,7 @@ func TestRealDVDISOParity(t *testing.T) {
 		t.Fatalf("merger streams: %+v", got)
 	}
 	sources := []string{iso}
-	if folder := os.Getenv("MATTMUX_TEST_DVD_FOLDER"); folder != "" {
+	if folder := os.Getenv("MATTRIP_TEST_DVD_FOLDER"); folder != "" {
 		sources = append(sources, folder)
 	}
 	for _, source := range sources {

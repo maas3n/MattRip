@@ -1,8 +1,8 @@
-# MattMux for Android / ChromeOS
+# MattRip for Android / ChromeOS
 
-This directory contains the experimental Android/ChromeOS frontend for MattMux. Android/ChromeOS follows the unified MattMux release line. GitHub releases publish one persistently signed universal APK named `MattMux-<version>-Android.apk`.
+This directory contains the experimental Android/ChromeOS frontend for MattRip. Android/ChromeOS follows the unified MattRip development line. No public MattRip APK has been released yet; future releases will use `MattRip-<version>-Android.apk`.
 
-Use `MattMux-<version>-Android.apk` on Android phones/tablets and on Chromebooks with Android app support. The same APK supports both Android and ChromeOS; no separate ChromeOS APK is required.
+Use `MattRip-<version>-Android.apk` on Android phones/tablets and on Chromebooks with Android app support. The same APK supports both Android and ChromeOS; no separate ChromeOS APK is required.
 
 ## Experimental status
 
@@ -33,13 +33,13 @@ Current limitations / remaining gates:
 - ISO9660-only images and streaming-only providers are unsupported
 - real-device Android and physical Chromebook testing remain release gates
 - production Play purchase verification and rollout remain separate from the experimental GitHub APK
-- v1.4.0 was debug-signed; v1.4.1 and later GitHub APKs use persistent distribution signing, so upgrading from v1.4.0 may require uninstalling the old APK first
+- MattRip uses a separate Android application ID from MattMux; establish MattRip's own persistent signing identity before its first public APK
 
 Run and release status should be checked in CI; source implementation alone is not proof of a tested APK. Native test details are in [`native/tests/README.md`](native/tests/README.md).
 
 ## Billing
 
-The project contains a Google Play Billing integration and the non-consumable product ID `mattmux_pro`, but purchases are deliberately disabled in the current experimental build through `BuildConfig.ENABLE_BILLING_PURCHASES = false`.
+The project contains a Google Play Billing integration and the non-consumable product ID `mattrip_pro`, but purchases are deliberately disabled in the current experimental build through `BuildConfig.ENABLE_BILLING_PURCHASES = false`.
 
 Do not enable charging merely because the native remux engine now exists. Enable production purchases only after the remux path has passed real Chromebook/device testing and the production purchase-verification/signing plan is ready. See [`PLAY_CONSOLE.md`](PLAY_CONSOLE.md).
 
@@ -90,15 +90,15 @@ gradle -p android :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:
 The intended one-time product ID is:
 
 ```text
-mattmux_pro
+mattrip_pro
 ```
 
 Price and availability belong in Play Console rather than in the APK. Follow [`PLAY_CONSOLE.md`](PLAY_CONSOLE.md) before enabling purchases or publishing a production Play build.
 
 ## In-app CLI stream selection and ISO output
 
-`mattmux-cli remux --streams 0,2 --title 1 SOURCE` copies only the absolute stream indexes shown by `metadata --title 1 SOURCE`. Both `--streams 0,2` and `--streams=0,2` are accepted; omitting the option copies all streams. Unknown indexes fail before creating output. `--no-chapters` remains independent of stream selection.
+`mattrip-cli remux --streams 0,2 --title 1 SOURCE` copies only the absolute stream indexes shown by `metadata --title 1 SOURCE`. Both `--streams 0,2` and `--streams=0,2` are accepted; omitting the option copies all streams. Unknown indexes fail before creating output. `--no-chapters` remains independent of stream selection.
 
-For a single unmounted `Movie.iso`, omitting `--output` creates `Movie.mkv` beside the ISO when MattMux has read/write access to its parent through a granted document tree. A standalone file grant may not include parent access: grant the containing folder or pass `--output OUTPUT_ROOT`. Provider document IDs are treated as opaque; MattMux verifies the parent through the provider instead of guessing a filesystem path. An explicit output folder overrides this default and retains the ISO-derived filename.
+For a single unmounted `Movie.iso`, omitting `--output` creates `Movie.mkv` beside the ISO when MattRip has read/write access to its parent through a granted document tree. A standalone file grant may not include parent access: grant the containing folder or pass `--output OUTPUT_ROOT`. Provider document IDs are treated as opaque; MattRip verifies the parent through the provider instead of guessing a filesystem path. An explicit output folder overrides this default and retains the ISO-derived filename.
 
 Existing MKVs are never overwritten. The CLI reserves a new final-name document before writing, so it is visible while remuxing; cancellation/failure removes that newly created document. Providers that cannot supply the requested name or a writable seekable output fail cleanly.

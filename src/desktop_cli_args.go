@@ -102,7 +102,7 @@ func splitCLICommand(line string) ([]string, error) {
 	if active {
 		args = append(args, b.String())
 	}
-	if len(args) > 0 && (args[0] == "mattmux-cli" || args[0] == "mattmux-cli.exe") {
+	if len(args) > 0 && (args[0] == "mattrip-cli" || args[0] == "mattrip-cli.exe") {
 		args = args[1:]
 	}
 	return args, nil

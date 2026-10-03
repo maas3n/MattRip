@@ -75,8 +75,8 @@ func browseISO(owner uintptr) string {
 	return syscall.UTF16ToString(fileBuf)
 }
 func showAbout() {
-	msg := fmt.Sprintf("MattMux %s\n\nLossless DVD-title remuxing to MKV.\n\nHighlights in this build:\n• native DVD IFO chapter detection with FFmpeg fallback\n• optional Preserve chapters setting, enabled by default\n• accurate FFmpeg dvdvideo chapter pre-indexing when preservation is enabled\n• pinned and verified FFmpeg / MediaInfo downloads\n• partial-file output before atomic rename\n• protected-folder checks and cancelable operations\n• portable mode keeps tools, settings, and logs in MattMuxData beside the executable\n• installed mode keeps local data under %%LOCALAPPDATA%%\\MattMux\n\nFFmpeg and MediaInfo are third-party projects with their own licenses.", appVersion)
-	messageBox(app.hwnd, "About MattMux", msg, MB_OK|MB_ICONINFORMATION)
+	msg := fmt.Sprintf("MattRip %s\n\nLossless DVD-title remuxing to MKV.\n\nHighlights in this build:\n• native DVD IFO chapter detection with FFmpeg fallback\n• optional Preserve chapters setting, enabled by default\n• accurate FFmpeg dvdvideo chapter pre-indexing when preservation is enabled\n• pinned and verified FFmpeg / MediaInfo downloads\n• partial-file output before atomic rename\n• protected-folder checks and cancelable operations\n• portable mode keeps tools, settings, and logs in MattRipData beside the executable\n• installed mode keeps local data under %%LOCALAPPDATA%%\\MattRip\n\nFFmpeg and MediaInfo are third-party projects with their own licenses.", appVersion)
+	messageBox(app.hwnd, "About MattRip", msg, MB_OK|MB_ICONINFORMATION)
 }
 func requestTextWindow(title, text string) {
 	app.pendingTextMu.Lock()
@@ -86,7 +86,7 @@ func requestTextWindow(title, text string) {
 }
 func showTextWindow(title, text string) {
 	hInstance, _, _ := procGetModuleHandleW.Call(0)
-	className := utf16Ptr("MattMuxTextWindowClass")
+	className := utf16Ptr("MattRipTextWindowClass")
 	cursor, _, _ := procLoadCursorW.Call(0, 32512)
 	bg, _, _ := procGetStockObject.Call(5)
 	wc := WNDCLASSEX{CbSize: uint32(unsafe.Sizeof(WNDCLASSEX{})), LpfnWndProc: syscall.NewCallback(textWindowProc), HInstance: hInstance, HCursor: cursor, HbrBackground: bg, LpszClassName: className}
@@ -168,7 +168,7 @@ func initLogging() {
 	root := appDataRoot()
 	dir := filepath.Join(root, "logs")
 	_ = os.MkdirAll(dir, 0755)
-	p := filepath.Join(dir, "mattmux.log")
+	p := filepath.Join(dir, "mattrip.log")
 	f, err := os.OpenFile(p, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err == nil {
 		app.logFile = f

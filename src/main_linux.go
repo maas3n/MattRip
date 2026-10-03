@@ -52,8 +52,8 @@ func main() {
 		desktopCLI()
 		return
 	}
-	a := app.NewWithID("io.github.maas3n.mattmux")
-	w := a.NewWindow(fmt.Sprintf("MattMux %s", appVersion))
+	a := app.NewWithID("io.github.maas3n.mattrip")
+	w := a.NewWindow(fmt.Sprintf("MattRip %s", appVersion))
 	g := &linuxGUI{window: w}
 	g.build()
 	w.Resize(fyne.NewSize(840, 620))
@@ -67,7 +67,7 @@ func main() {
 			fyne.Do(func() { w.Close() })
 		}()
 		a.Run()
-		fmt.Println("MattMux GUI graphics self-test: OK")
+		fmt.Println("MattRip GUI graphics self-test: OK")
 		return
 	}
 	go g.checkInstalledTools()
@@ -105,7 +105,7 @@ func (g *linuxGUI) build() {
 	aboutBtn := widget.NewButton("About", g.showAbout)
 	g.sourceEntry.OnChanged = func(string) { g.invalidateTitles() }
 	g.outputEntry.OnChanged = func(string) { g.saveSettings() }
-	header := container.NewVBox(widget.NewLabelWithStyle("MattMux", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), widget.NewLabel("Lossless DVD title remuxing to Matroska — video, audio, subtitles, chapters and metadata."))
+	header := container.NewVBox(widget.NewLabelWithStyle("MattRip", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), widget.NewLabel("Lossless DVD title remuxing to Matroska — video, audio, subtitles, chapters and metadata."))
 	sourceRow := container.NewBorder(nil, nil, nil, container.NewHBox(g.dvdBtn, g.isoBtn), g.sourceEntry)
 	outputRow := container.NewBorder(nil, nil, nil, g.outputBtn, g.outputEntry)
 	titleRow := container.NewBorder(nil, nil, nil, container.NewHBox(g.scanBtn, g.metaBtn, aboutBtn), g.titleSelect)
@@ -158,7 +158,7 @@ func (g *linuxGUI) chooseOutput() {
 func (g *linuxGUI) checkInstalledTools() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	line := "System FFmpeg is missing/incompatible; MattMux will prepare its verified fallback when needed."
+	line := "System FFmpeg is missing/incompatible; MattRip will prepare its verified fallback when needed."
 	if tools, err := inspectSystemTools(ctx); err == nil {
 		line = fmt.Sprintf("Ready — using system FFmpeg (%s).", tools.ffmpeg)
 	}
@@ -472,7 +472,7 @@ func (g *linuxGUI) showTrackDialog(src string, title titleInfo, options []trackO
 	})
 	buttons := container.NewHBox(selectAll, selectNone, layout.NewSpacer(), closeBtn)
 	content := container.NewBorder(instruction, buttons, nil, nil, split)
-	trackDialog = dialog.NewCustomWithoutButtons(fmt.Sprintf("MattMux — Title %d Tracks / Metadata", title.Number), content, g.window)
+	trackDialog = dialog.NewCustomWithoutButtons(fmt.Sprintf("MattRip — Title %d Tracks / Metadata", title.Number), content, g.window)
 	trackDialog.Show()
 	trackDialog.Resize(fyne.NewSize(800, 680))
 }
@@ -553,7 +553,7 @@ func (g *linuxGUI) showError(err error) {
 	}
 }
 func (g *linuxGUI) showAbout() {
-	dialog.ShowInformation("About MattMux", fmt.Sprintf("MattMux %s\n\nLinux desktop + CLI DVD-to-MKV remuxer.\n\nMattMux first uses compatible system ffmpeg/ffprobe tools. If FFmpeg does not expose the dvdvideo demuxer, a pinned SHA-256-verified fallback is prepared in your user cache. MediaInfo is optional.\n\nMattMux does not bypass DVD copy protection such as CSS.", appVersion), g.window)
+	dialog.ShowInformation("About MattRip", fmt.Sprintf("MattRip %s\n\nLinux desktop + CLI DVD-to-MKV remuxer.\n\nMattRip first uses compatible system ffmpeg/ffprobe tools. If FFmpeg does not expose the dvdvideo demuxer, a pinned SHA-256-verified fallback is prepared in your user cache. MediaInfo is optional.\n\nMattRip does not bypass DVD copy protection such as CSS.", appVersion), g.window)
 }
 func firstLine(s string) string {
 	if i := strings.IndexByte(s, '\n'); i >= 0 {
@@ -578,7 +578,7 @@ func linuxSettingsPath() string {
 		home, _ := os.UserHomeDir()
 		root = filepath.Join(home, ".config")
 	}
-	dir := filepath.Join(root, "mattmux")
+	dir := filepath.Join(root, "mattrip")
 	_ = os.MkdirAll(dir, 0700)
 	return filepath.Join(dir, "settings.json")
 }
