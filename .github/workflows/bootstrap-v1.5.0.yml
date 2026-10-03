@@ -1,0 +1,55 @@
+name: Bootstrap MattRip v1.5.0
+
+on:
+  push:
+    branches:
+      - release/v1.5.0-bootstrap
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  tag-and-dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact release target
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Create immutable v1.5.0 tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag='v1.5.0'
+          target='c7eb6d577f9d8a67e6989a32fb4e4feae0e5cba7'
+
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$target" || {
+            echo "main moved: expected $target, got $actual" >&2
+            exit 1
+          }
+
+          if git rev-parse --verify "refs/tags/$tag" >/dev/null 2>&1; then
+            echo "Tag $tag already exists; refusing to move it." >&2
+            exit 1
+          fi
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $tag already exists; refusing to overwrite it." >&2
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "$tag" "$target"
+          git push origin "refs/tags/$tag"
+
+      - name: Dispatch unified v1.5.0 release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run release.yml --ref main -f tag=v1.5.0
