@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add a shared desktop `DVDSource` foundation for VIDEO_TS folders, DVD ISOs and physical optical drives.
+- Add Windows/Linux physical DVD-drive input to DVD Remux/Demux and Advanced Merger, using the existing FFmpeg `dvdvideo` + libdvdread/libdvdnav path and longest-title selection.
+- Allow desktop `mattrip-cli scan/metadata/remux` to consume physical DVD devices; physical-disc remux requires an explicit output directory.
+
 - Fork MattRip from the verified MattMux 1.4.19 baseline and establish separate Windows, Linux, Android, CLI, package, cache, installer, and release identities without changing media-engine behavior.
 - Preserve historical MattMux release artifacts only where they are checksum-verified build inputs; historical entries below remain MattMux history rather than being relabeled as MattRip releases.
 - Retire inherited one-off MattMux publish/hotfix workflows from the active fork workflow set.
