@@ -105,6 +105,7 @@ func setBusyUI(busy bool) {
 	procEnableWindow.Call(app.sourceEdit, enabled)
 	procEnableWindow.Call(app.sourceDVDButton, enabled)
 	procEnableWindow.Call(app.sourceISOButton, enabled)
+	procEnableWindow.Call(app.sourceDriveButton, enabled)
 	procEnableWindow.Call(app.outputEdit, enabled)
 	procEnableWindow.Call(app.outputButton, enabled)
 	procEnableWindow.Call(app.titleCombo, enabled)
