@@ -26,7 +26,7 @@ func runInAppCLI(ctx context.Context, line string) (string, error) {
 	token.Close()
 	defer os.Remove(path)
 	cmd := exec.CommandContext(ctx, exe, append([]string{"--cli"}, args...)...)
-	cmd.Env = append(os.Environ(), "MATTMUX_CLI_CANCEL_FILE="+path)
+	cmd.Env = append(os.Environ(), "MATTRIP_CLI_CANCEL_FILE="+path)
 	// Ask the embedded CLI to cancel its context, allowing FFmpeg shutdown and
 	// owned partial-file cleanup before the subprocess exits.
 	cmd.Cancel = func() error { return os.Remove(path) }
@@ -36,7 +36,7 @@ func runInAppCLI(ctx context.Context, line string) (string, error) {
 	return string(out), err
 }
 func watchCLICancellation(ctx context.Context, cancel context.CancelFunc) {
-	path := os.Getenv("MATTMUX_CLI_CANCEL_FILE")
+	path := os.Getenv("MATTRIP_CLI_CANCEL_FILE")
 	if path == "" {
 		return
 	}
