@@ -19,8 +19,9 @@ const (
 )
 
 type dvdDrive struct {
-	Input string
-	Label string
+	Input    string
+	Label    string
+	BaseName string
 }
 
 type dvdSource struct {
@@ -31,14 +32,14 @@ type dvdSource struct {
 }
 
 func resolveDVDSource(raw string) (dvdSource, error) {
-	raw = strings.TrimSpace(strings.Trim(raw, """))
+	raw = strings.TrimSpace(strings.Trim(raw, "\""))
 	if raw == "" {
 		return dvdSource{}, errors.New("choose a DVD folder, VIDEO_TS folder, ISO file, or physical DVD drive")
 	}
 	if drive, ok, err := resolvePhysicalDVDDrive(raw); err != nil {
 		return dvdSource{}, err
 	} else if ok {
-		base := strings.TrimSpace(drive.Label)
+		base := strings.TrimSpace(drive.BaseName)
 		if base == "" {
 			base = "DVD"
 		}
