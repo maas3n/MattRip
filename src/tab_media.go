@@ -18,10 +18,11 @@ func isMKVSource(path string) bool { return strings.EqualFold(filepath.Ext(path)
 
 // The GUI accepts MKV; DVD-only batch discovery and CLI normalization stay separate.
 func normalizeTabSource(path string) (string, error) {
-	path = filepath.Clean(strings.TrimSpace(strings.Trim(path, "\"")))
+	path = strings.TrimSpace(strings.Trim(path, "\""))
 	if !isMKVSource(path) {
 		return normalizeSource(path)
 	}
+	path = filepath.Clean(path)
 	st, err := os.Stat(path)
 	if err != nil {
 		return "", err
