@@ -205,7 +205,7 @@ func demuxTab(ctx context.Context, tools toolPaths, source string, title int, ou
 	}
 	base := strings.TrimSuffix(filepath.Base(source), filepath.Ext(source))
 	if !isMKVSource(source) {
-		base += fmt.Sprintf("-title-%02d", title)
+		base = dvdSourceBaseName(source) + fmt.Sprintf("-title-%02d", title)
 	}
 	// Reserve a new output directory; never overwrite a previous export.
 	final, err = os.MkdirTemp(output, base+"-demux-")
