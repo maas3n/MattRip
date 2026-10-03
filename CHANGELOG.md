@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.5.0 - 2026-10-04
 
 - Add a shared desktop `DVDSource` foundation for VIDEO_TS folders, DVD ISOs and physical optical drives.
 - Add Windows/Linux physical DVD-drive input to DVD Remux/Demux and Advanced Merger, using the existing FFmpeg `dvdvideo` + libdvdread/libdvdnav path and longest-title selection.
