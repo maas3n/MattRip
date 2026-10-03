@@ -10,10 +10,10 @@
 
     <application
         android:allowBackup="false"
-        android:icon="@drawable/ic_mattmux"
+        android:icon="@drawable/ic_mattrip"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.MattMux">
+        android:theme="@style/Theme.MattRip">
         <activity
             android:name="io.github.maas3n.mattmux.MainActivity"
             android:exported="true"
