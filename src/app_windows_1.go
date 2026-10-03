@@ -144,10 +144,11 @@ func createControls(hwnd, hInstance uintptr) {
 	add(0, "STATIC", "Lossless DVD title remuxing to Matroska — video, audio, subtitles, chapters and metadata.", WS_CHILD|WS_VISIBLE, 30, 64, 750, 24, 0, app.bodyFont)
 	add(0, "BUTTON", "Source", WS_CHILD|WS_VISIBLE|BS_GROUPBOX, 22, 102, 770, 112, 0, app.bodyFont)
 	add(0, "STATIC", "DVD / VIDEO_TS / ISO / MKV", WS_CHILD|WS_VISIBLE, 38, 127, 210, 22, 0, app.bodyFont)
-	app.sourceEdit = add(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD|WS_VISIBLE|WS_TABSTOP|ES_AUTOHSCROLL, 38, 150, 520, 28, idSourceEdit, app.bodyFont)
-	app.sourceDVDButton = add(0, "BUTTON", "DVD Folder…", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 570, 148, 98, 31, idDVDButton, app.bodyFont)
-	app.sourceISOButton = add(0, "BUTTON", "ISO / MKV…", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 678, 148, 92, 31, idISOButton, app.bodyFont)
-	add(0, "STATIC", "You can also drag a DVD folder, .iso or .mkv onto this window.", WS_CHILD|WS_VISIBLE, 38, 184, 430, 20, 0, app.bodyFont)
+	app.sourceEdit = add(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD|WS_VISIBLE|WS_TABSTOP|ES_AUTOHSCROLL, 38, 150, 392, 28, idSourceEdit, app.bodyFont)
+	app.sourceDVDButton = add(0, "BUTTON", "DVD Folder…", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 442, 148, 100, 31, idDVDButton, app.bodyFont)
+	app.sourceISOButton = add(0, "BUTTON", "ISO / MKV…", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 550, 148, 96, 31, idISOButton, app.bodyFont)
+	app.sourceDriveButton = add(0, "BUTTON", "DVD Drive…", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 654, 148, 116, 31, idDriveButton, app.bodyFont)
+	add(0, "STATIC", "Choose a DVD folder, ISO/MKV file, physical DVD drive, or drag a folder/file here.", WS_CHILD|WS_VISIBLE, 38, 184, 590, 20, 0, app.bodyFont)
 	add(0, "BUTTON", "Destination", WS_CHILD|WS_VISIBLE|BS_GROUPBOX, 22, 224, 770, 94, 0, app.bodyFont)
 	add(0, "STATIC", "Output folder", WS_CHILD|WS_VISIBLE, 38, 249, 120, 22, 0, app.bodyFont)
 	app.outputEdit = add(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD|WS_VISIBLE|WS_TABSTOP|ES_AUTOHSCROLL, 38, 272, 622, 28, idOutputEdit, app.bodyFont)
@@ -214,6 +215,19 @@ func windowProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 			if !app.busy.Load() {
 				if p := browseISO(hwnd); p != "" {
 					setSource(p)
+				}
+			}
+		case idDriveButton:
+			if !app.busy.Load() {
+				if p := browseFolder(hwnd, "Choose the physical DVD drive"); p != "" {
+					drive, ok, err := resolvePhysicalDVDDrive(p)
+					if err != nil {
+						messageBox(hwnd, "DVD Drive", err.Error(), MB_OK|MB_ICONERROR)
+					} else if !ok {
+						messageBox(hwnd, "DVD Drive", "The selected location is not an optical DVD/CD-ROM drive.", MB_OK|MB_ICONWARNING)
+					} else {
+						setSource(drive.Input)
+					}
 				}
 			}
 		case idOutputBtn:
