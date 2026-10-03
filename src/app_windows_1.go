@@ -143,7 +143,7 @@ func createControls(hwnd, hInstance uintptr) {
 	add(0, "STATIC", "MattRip", WS_CHILD|WS_VISIBLE, 28, 22, 300, 42, 0, app.headerFont)
 	add(0, "STATIC", "Lossless DVD title remuxing to Matroska — video, audio, subtitles, chapters and metadata.", WS_CHILD|WS_VISIBLE, 30, 64, 750, 24, 0, app.bodyFont)
 	add(0, "BUTTON", "Source", WS_CHILD|WS_VISIBLE|BS_GROUPBOX, 22, 102, 770, 112, 0, app.bodyFont)
-	add(0, "STATIC", "DVD / VIDEO_TS / ISO / MKV", WS_CHILD|WS_VISIBLE, 38, 127, 210, 22, 0, app.bodyFont)
+	add(0, "STATIC", "DVD / DRIVE / VIDEO_TS / ISO / MKV", WS_CHILD|WS_VISIBLE, 38, 127, 270, 22, 0, app.bodyFont)
 	app.sourceEdit = add(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD|WS_VISIBLE|WS_TABSTOP|ES_AUTOHSCROLL, 38, 150, 392, 28, idSourceEdit, app.bodyFont)
 	app.sourceDVDButton = add(0, "BUTTON", "DVD Folder…", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 442, 148, 100, 31, idDVDButton, app.bodyFont)
 	app.sourceISOButton = add(0, "BUTTON", "ISO / MKV…", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 550, 148, 96, 31, idISOButton, app.bodyFont)
