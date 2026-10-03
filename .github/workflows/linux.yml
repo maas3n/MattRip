@@ -209,13 +209,13 @@ jobs:
           test -s "$selected"
           test "$(ffprobe -v error -show_entries stream=index -of csv=p=0 "$selected" | wc -l)" -eq 1
           test -z "$(ffprobe -v error -show_entries chapter=id -of csv=p=0 "$selected")"
-          export MATTMUX_TEST_DVD_ISO="$work/isos/Integration.iso"
-          export MATTMUX_TEST_DVD_FOLDER="$work/movies/Integration Movie"
+          export MATTRIP_TEST_DVD_ISO="$work/isos/Integration.iso"
+          export MATTRIP_TEST_DVD_FOLDER="$work/movies/Integration Movie"
           (cd src && go test -tags cli -run TestRealDVDISOParity -v .)
           python3 android/native/tests/make-dvd-demux-fixture.py "$work/demux-dvd"
           genisoimage -quiet -dvd-video -udf -o "$work/demux-dvd.iso" "$work/demux-dvd/dvd"
-          export MATTMUX_TEST_DEMUX_DVD="$work/demux-dvd/dvd"
-          export MATTMUX_TEST_DEMUX_ISO="$work/demux-dvd.iso"
+          export MATTRIP_TEST_DEMUX_DVD="$work/demux-dvd/dvd"
+          export MATTRIP_TEST_DEMUX_ISO="$work/demux-dvd.iso"
           (cd src && go test -tags cli -run TestAuthoredDVDTabDemux -v .)
 
       - name: Validate single-file standalone executable
