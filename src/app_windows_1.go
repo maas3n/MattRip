@@ -170,6 +170,35 @@ func createControls(hwnd, hInstance uintptr) {
 	procEnableWindow.Call(app.cancelBtn, 0)
 }
 
+func chooseWindowsPhysicalDVDDrive(owner uintptr) string {
+	drives, err := listPhysicalDVDDrives()
+	if err != nil {
+		messageBox(owner, "DVD Drive", err.Error(), MB_OK|MB_ICONERROR)
+		return ""
+	}
+	if len(drives) == 0 {
+		messageBox(owner, "DVD Drive", "No physical optical DVD/CD-ROM drive was detected.", MB_OK|MB_ICONWARNING)
+		return ""
+	}
+	if len(drives) == 1 {
+		return drives[0].Input
+	}
+	p := browseFolder(owner, "Choose one of the detected physical DVD drives")
+	if p == "" {
+		return ""
+	}
+	drive, ok, err := resolvePhysicalDVDDrive(p)
+	if err != nil {
+		messageBox(owner, "DVD Drive", err.Error(), MB_OK|MB_ICONERROR)
+		return ""
+	}
+	if !ok {
+		messageBox(owner, "DVD Drive", "The selected location is not an optical DVD/CD-ROM drive.", MB_OK|MB_ICONWARNING)
+		return ""
+	}
+	return drive.Input
+}
+
 func windowProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case mergerDoneMessage:
@@ -219,15 +248,8 @@ func windowProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 			}
 		case idDriveButton:
 			if !app.busy.Load() {
-				if p := browseFolder(hwnd, "Choose the physical DVD drive"); p != "" {
-					drive, ok, err := resolvePhysicalDVDDrive(p)
-					if err != nil {
-						messageBox(hwnd, "DVD Drive", err.Error(), MB_OK|MB_ICONERROR)
-					} else if !ok {
-						messageBox(hwnd, "DVD Drive", "The selected location is not an optical DVD/CD-ROM drive.", MB_OK|MB_ICONWARNING)
-					} else {
-						setSource(drive.Input)
-					}
+				if p := chooseWindowsPhysicalDVDDrive(hwnd); p != "" {
+					setSource(p)
 				}
 			}
 		case idOutputBtn:
