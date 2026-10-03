@@ -335,30 +335,11 @@ func cacheRoot() (string, error) {
 }
 
 func normalizeSource(p string) (string, error) {
-	p = filepath.Clean(strings.TrimSpace(strings.Trim(p, "\"")))
-	if p == "." || p == "" {
-		return "", errors.New("choose a DVD folder, VIDEO_TS folder, or ISO file")
-	}
-	info, err := os.Stat(p)
+	src, err := resolveDVDSource(p)
 	if err != nil {
-		return "", fmt.Errorf("source does not exist: %s", p)
+		return "", err
 	}
-	if !info.IsDir() {
-		if strings.EqualFold(filepath.Ext(p), ".iso") {
-			return p, nil
-		}
-		return "", errors.New("source file must be a DVD ISO (.iso)")
-	}
-	if strings.EqualFold(filepath.Base(p), "VIDEO_TS") && fileExistsFold(p, "VIDEO_TS.IFO") {
-		return filepath.Dir(p), nil
-	}
-	if child := findChildDirFold(p, "VIDEO_TS"); child != "" && fileExistsFold(child, "VIDEO_TS.IFO") {
-		return p, nil
-	}
-	if fileExistsFold(p, "VIDEO_TS.IFO") {
-		return filepath.Dir(p), nil
-	}
-	return "", errors.New("the selected folder does not contain a VIDEO_TS DVD structure")
+	return src.Input, nil
 }
 func findChildDirFold(dir, name string) string {
 	es, err := os.ReadDir(dir)
@@ -723,14 +704,7 @@ func validateOutputDir(dir string) error {
 	return nil
 }
 func outputPath(src, outDir string, title int) string {
-	base := filepath.Base(src)
-	if strings.EqualFold(filepath.Ext(base), ".iso") {
-		base = strings.TrimSuffix(base, filepath.Ext(base))
-	}
-	if strings.EqualFold(base, "VIDEO_TS") {
-		base = filepath.Base(filepath.Dir(src))
-	}
-	base = sanitizeFilename(base)
+	base := sanitizeFilename(dvdSourceBaseName(src))
 	if base == "" {
 		base = "DVD"
 	}
@@ -752,26 +726,7 @@ func sanitizeFilename(s string) string {
 	return s
 }
 func mediaInfoTarget(src string) string {
-	st, err := os.Stat(src)
-	if err != nil {
-		return ""
-	}
-	if !st.IsDir() {
-		return src
-	}
-	videoTS := findChildDirFold(src, "VIDEO_TS")
-	if videoTS == "" && strings.EqualFold(filepath.Base(src), "VIDEO_TS") {
-		videoTS = src
-	}
-	if videoTS != "" {
-		es, _ := os.ReadDir(videoTS)
-		for _, e := range es {
-			if !e.IsDir() && strings.EqualFold(e.Name(), "VIDEO_TS.IFO") {
-				return filepath.Join(videoTS, e.Name())
-			}
-		}
-	}
-	return ""
+	return dvdSourceMediaInfoTarget(src)
 }
 func friendlyCodec(s string) string {
 	m := map[string]string{"mpeg2video": "MPEG-2 Video", "ac3": "Dolby Digital (AC-3)", "eac3": "Dolby Digital Plus (E-AC-3)", "dts": "DTS", "pcm_dvd": "PCM", "mp2": "MPEG Audio Layer II", "dvd_subtitle": "DVD Subtitle"}
