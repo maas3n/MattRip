@@ -81,7 +81,7 @@ internal class DvdDocumentOutput(
         if (requestedName != null) return reserveNamedOutput(requestedName)
         val parentId = documentTreeRootId(treeUri)
         val parent = DocumentsContract.buildDocumentUriUsingTree(treeUri, parentId)
-        val finalName = "MattMux-title-%02d.mkv".format(title)
+        val finalName = "MattRip-title-%02d.mkv".format(title)
         val partialName = "$finalName.partial"
         val uri = DocumentsContract.createDocument(resolver, parent, "video/x-matroska", partialName)
             ?: error("The output provider could not create $partialName")
