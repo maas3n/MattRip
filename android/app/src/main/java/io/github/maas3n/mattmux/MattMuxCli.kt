@@ -16,9 +16,9 @@ internal sealed class MattMuxCliCommand {
 }
 
 internal object MattMuxCliSyntax {
-    private const val BATCH_USAGE = "Usage: mattmux-cli --batch [--log FILE] MOVIES_ROOT [OUTPUT_ROOT]"
-    private const val METADATA_USAGE = "Usage: mattmux-cli metadata [--title N] SOURCE"
-    private const val REMUX_USAGE = "Usage: mattmux-cli remux [--title N] [--output OUTPUT_ROOT] [--no-chapters] [--streams 0,2] SOURCE"
+    private const val BATCH_USAGE = "Usage: mattrip-cli --batch [--log FILE] MOVIES_ROOT [OUTPUT_ROOT]"
+    private const val METADATA_USAGE = "Usage: mattrip-cli metadata [--title N] SOURCE"
+    private const val REMUX_USAGE = "Usage: mattrip-cli remux [--title N] [--output OUTPUT_ROOT] [--no-chapters] [--streams 0,2] SOURCE"
 
     fun parse(commandLine: String): MattMuxCliCommand {
         val tokens = tokenize(commandLine).toMutableList()
@@ -28,12 +28,12 @@ internal object MattMuxCliSyntax {
         return when (tokens.removeAt(0)) {
             "--batch" -> parseBatch(tokens)
             "scan" -> {
-                require(tokens.size == 1) { "Usage: mattmux-cli scan SOURCE" }
+                require(tokens.size == 1) { "Usage: mattrip-cli scan SOURCE" }
                 MattMuxCliCommand.Scan(tokens.single())
             }
             "metadata" -> parseMetadata(tokens)
             "remux" -> parseRemux(tokens)
-            else -> error("Unknown command. Run mattmux-cli --help")
+            else -> error("Unknown command. Run mattrip-cli --help")
         }
     }
 
@@ -186,11 +186,11 @@ internal class MattMuxCliRunner(private val context: Context) {
             MattMuxCliCommand.Help -> {
                 emit("MattRip CLI ${BuildConfig.VERSION_NAME}")
                 emit("Usage:")
-                emit("  mattmux-cli scan SOURCE")
-                emit("  mattmux-cli metadata [--title N] SOURCE")
-                emit("  mattmux-cli remux [--title N] [--output OUTPUT_ROOT] [--no-chapters] [--streams 0,2] SOURCE")
-                emit("  mattmux-cli --batch [--log FILE] MOVIES_ROOT [OUTPUT_ROOT]")
-                emit("  mattmux-cli --version")
+                emit("  mattrip-cli scan SOURCE")
+                emit("  mattrip-cli metadata [--title N] SOURCE")
+                emit("  mattrip-cli remux [--title N] [--output OUTPUT_ROOT] [--no-chapters] [--streams 0,2] SOURCE")
+                emit("  mattrip-cli --batch [--log FILE] MOVIES_ROOT [OUTPUT_ROOT]")
+                emit("  mattrip-cli --version")
                 emit("Android SOURCE may be a persisted content:// DVD-folder tree URI or ISO document URI.")
                 emit("MOVIES_ROOT and OUTPUT_ROOT are persisted content:// document-tree URIs.")
                 emit("BATCH accepts Movie/VIDEO_TS folders plus unmounted ISO files. With no OUTPUT_ROOT, VIDEO_TS outputs go in the movie folder beside VIDEO_TS and ISO outputs go beside the ISO.")
