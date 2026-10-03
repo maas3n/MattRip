@@ -61,9 +61,10 @@ func createMergerWindowsControls(hwnd, hInstance uintptr) {
 	}
 	// Keep the short movie button compact so the two stream-specific actions get
 	// enough width to remain centered and readable at Windows DPI scaling levels.
-	add("BUTTON", "CHOOSE MOVIE FILES", BS_PUSHBUTTON, 28, 52, 200, 34, mergerFirstID)
-	add("BUTTON", "CHOOSE AUDIO STREAMS FROM MKV or RAW", BS_PUSHBUTTON, 236, 52, 266, 34, mergerFirstID+1)
-	add("BUTTON", "CHOOSE SUBTITLE STREAMS FROM MKV or RAW", BS_PUSHBUTTON, 510, 52, 268, 34, mergerFirstID+2)
+	add("BUTTON", "MOVIE FILES", BS_PUSHBUTTON, 28, 52, 166, 34, mergerFirstID)
+	add("BUTTON", "DVD DRIVE", BS_PUSHBUTTON, 202, 52, 142, 34, mergerFirstID+9)
+	add("BUTTON", "AUDIO / MKV / RAW", BS_PUSHBUTTON, 352, 52, 204, 34, mergerFirstID+1)
+	add("BUTTON", "SUBTITLE / MKV / RAW", BS_PUSHBUTTON, 564, 52, 214, 34, mergerFirstID+2)
 	add("STATIC", "Select Streams", 0, 28, 94, 750, 22, 0)
 	mergerWindow.list = add("SysListView32", "", WS_BORDER|LVS_REPORT|LVS_SHOWSELALWAYS, 28, 120, 750, 235, 0)
 	procSendMessageW.Call(mergerWindow.list, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, LVS_EX_CHECKBOXES|LVS_EX_FULLROWSELECT)
@@ -229,7 +230,7 @@ func handleWindowsMergerCommand(id int) bool {
 	if handleWindowsCLICommand(id) || handleWindowsBatchCommand(id) {
 		return true
 	}
-	if id < mergerFirstID || id > mergerFirstID+8 {
+	if id < mergerFirstID || id > mergerFirstID+9 {
 		return false
 	}
 	if id == mergerFirstID+8 {
@@ -272,7 +273,49 @@ func handleWindowsMergerCommand(id int) bool {
 					}
 					idx := len(mergerWindow.streams)
 					mergerWindow.streams = append(mergerWindow.streams, s)
-					item := LVITEMW{Mask: LVIF_TEXT | LVIF_STATE, IItem: int32(idx), PszText: utf16Ptr(filepath.Base(s.Path) + " — " + s.Track.Label()), State: 2 << 12, StateMask: LVIS_STATEIMAGEMASK}
+					item := LVITEMW{Mask: LVIF_TEXT | LVIF_STATE, IItem: int32(idx), PszText: utf16Ptr(dvdSourceDisplayName(s.Path) + " — " + s.Track.Label()), State: 2 << 12, StateMask: LVIS_STATEIMAGEMASK}
+					procSendMessageW.Call(mergerWindow.list, LVM_INSERTITEMW, 0, uintptr(unsafe.Pointer(&item)))
+				}
+				setText(mergerWindow.status, fmt.Sprintf("%d streams available", len(mergerWindow.streams)))
+			}, nil
+		})
+	case 9:
+		p := browseFolder(app.hwnd, "Choose the physical DVD drive")
+		if p == "" {
+			return true
+		}
+		drive, ok, err := resolvePhysicalDVDDrive(p)
+		if err != nil {
+			messageBox(app.hwnd, "DVD Drive", err.Error(), MB_OK|MB_ICONERROR)
+			return true
+		}
+		if !ok {
+			messageBox(app.hwnd, "DVD Drive", "The selected location is not an optical DVD/CD-ROM drive.", MB_OK|MB_ICONWARNING)
+			return true
+		}
+		runWindowsMerger("Reading DVD streams…", func(ctx context.Context) (func(), error) {
+			tools, err := mergerTools(ctx)
+			if err != nil {
+				return nil, err
+			}
+			added, err := probeMergerFile(ctx, tools.ffprobe, drive.Input, "all")
+			if err != nil {
+				return nil, err
+			}
+			return func() {
+				for _, s := range added {
+					duplicate := false
+					for _, old := range mergerWindow.streams {
+						if strings.EqualFold(old.Path, s.Path) && old.Track.Index == s.Track.Index {
+							duplicate = true
+						}
+					}
+					if duplicate {
+						continue
+					}
+					idx := len(mergerWindow.streams)
+					mergerWindow.streams = append(mergerWindow.streams, s)
+					item := LVITEMW{Mask: LVIF_TEXT | LVIF_STATE, IItem: int32(idx), PszText: utf16Ptr(dvdSourceDisplayName(s.Path) + " — " + s.Track.Label()), State: 2 << 12, StateMask: LVIS_STATEIMAGEMASK}
 					procSendMessageW.Call(mergerWindow.list, LVM_INSERTITEMW, 0, uintptr(unsafe.Pointer(&item)))
 				}
 				setText(mergerWindow.status, fmt.Sprintf("%d streams available", len(mergerWindow.streams)))
