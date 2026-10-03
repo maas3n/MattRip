@@ -32,7 +32,7 @@ class BatchPanel(private val activity: Activity) {
         val content = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL; setPadding(padding, padding, padding, padding) }
         content.addView(TextView(activity).apply { text = "BATCH — lossless DVD collection remux"; textSize = 20f })
         content.addView(TextView(activity).apply {
-            text = "MattMux scans Movie Title/VIDEO_TS folders and unmounted ISO files, uses libdvdnav/libdvdread to select the longest title, then native libav stream-copy to MKV. With no output folder, VIDEO_TS outputs are written in the movie folder beside VIDEO_TS and ISO outputs are written beside the ISO."
+            text = "MattRip scans Movie Title/VIDEO_TS folders and unmounted ISO files, uses libdvdnav/libdvdread to select the longest title, then native libav stream-copy to MKV. With no output folder, VIDEO_TS outputs are written in the movie folder beside VIDEO_TS and ISO outputs are written beside the ISO."
         })
         fun button(label: String, action: () -> Unit) = Button(activity).apply { text = label; setOnClickListener { action() }; controls += this; content.addView(this) }
         button("CHOOSE MOVIE FOLDER") { choose(REQUEST_INPUT) }
@@ -107,6 +107,6 @@ class BatchPanel(private val activity: Activity) {
                     }
                 }.onFailure { status.text = "Batch failed: ${it.message ?: it.javaClass.simpleName}" }
             }
-        }.apply { name = "MattMux-Android-BATCH" }.start()
+        }.apply { name = "MattRip-Android-BATCH" }.start()
     }
 }
