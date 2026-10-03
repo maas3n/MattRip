@@ -54,7 +54,7 @@ internal object DvdNavScanner {
     }
 
     private fun createStageRoot(context: Context): File {
-        val root = File(context.cacheDir, "mattmux-dvdnav-${System.nanoTime()}")
+        val root = File(context.cacheDir, "mattrip-dvdnav-${System.nanoTime()}")
         require(root.mkdirs()) { "Could not create libdvdnav staging directory" }
         return root
     }
