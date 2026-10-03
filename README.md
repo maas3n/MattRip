@@ -21,7 +21,7 @@ The main **DVD Remux** tab accepts:
 
 - DVD folders and `VIDEO_TS`
 - unmounted DVD ISO images
-- physical DVD drives on Windows/Linux (`D:` / `D:`-style drive roots in the GUI, canonicalized to `D:`, and `/dev/sr0`-style devices on Linux)
+- physical DVD drives on Windows/Linux (`D:`-style drive sources on Windows and `/dev/sr0`-style devices on Linux)
 - MKV files
 
 For DVD sources, MattRip discovers DVD titles, automatically selects the longest readable title, and lets you inspect metadata before processing. Video, audio, and subtitle streams are individually selectable. All detected streams are selected by default.
@@ -32,7 +32,7 @@ Windows and Linux use FFmpeg's `dvdvideo` input backed by `libdvdread`/`libdvdna
 
 ### Demux
 
-The **Demux** action in the DVD Remux tab extracts selected streams without re-encoding. It works with DVD folders, DVD ISOs, and MKV sources on Windows, Linux, and Android/ChromeOS.
+The **Demux** action in the DVD Remux tab extracts selected streams without re-encoding. It works with DVD folders, DVD ISOs, and MKV sources on all supported platforms, plus physical DVD drives on Windows/Linux.
 
 Depending on the selected streams, MattRip can export:
 
@@ -57,9 +57,10 @@ The **Advanced Merger** combines selected streams from multiple sources into one
 
 Inputs include normal containers such as MKV, MP4 and AVI, DVD ISOs, **physical DVD drives on Windows/Linux**, and supported elementary streams such as H.264, MPEG-2/VOB, AAC, AC-3, MP3, DTS, SRT, WebVTT and SUP.
 
-- **CHOOSE MOVIE FILES** exposes discovered video, audio, subtitle, attachment/data streams and embedded chapters.
-- **CHOOSE AUDIO FILES FROM MKV or RAW** exposes audio streams.
-- **CHOOSE SUBTITLE FILES FROM MKV or RAW** exposes subtitle streams.
+- **MOVIE FILES** exposes discovered video, audio, subtitle, attachment/data streams and embedded chapters.
+- **DVD DRIVE** adds the longest readable title from a physical desktop DVD drive.
+- **AUDIO / MKV / RAW** exposes audio streams.
+- **SUBTITLE / MKV / RAW** exposes subtitle streams.
 - **CHOOSE CHAPTER FILE FROM MKV or RAW** accepts chapters from MKV or valid `FFMETADATA1`.
 
 Streams are explicitly selectable. Embedded chapter titles are preserved, and a dedicated chapter source overrides selected embedded chapters.
@@ -104,12 +105,14 @@ remux
 --batch
 ```
 
-Single-disc remuxing supports options including `--title`, `--streams 0,2`, `--no-chapters`, and `--output`. The source can be a DVD folder, ISO image, or physical DVD device such as `D:` / `D:`-style drive roots on Windows or `/dev/sr0` on Linux. Physical drives require an explicit `--output` because there is no writable folder beside the disc. Windows Setup/Portable packages include `mattrip-cli.exe`; Linux packages include `mattrip-cli`, and the Linux Standalone accepts CLI commands directly or after `--cli`.
+Single-disc remuxing supports options including `--title`, `--streams 0,2`, `--no-chapters`, and `--output`. The source can be a DVD folder, ISO image, or physical DVD device such as `D:` on Windows or `/dev/sr0` on Linux. Physical drives require an explicit `--output` because there is no writable folder beside the disc. Windows Setup/Portable packages include `mattrip-cli.exe`; Linux packages include `mattrip-cli`, and the Linux Standalone accepts CLI commands directly or after `--cli`.
 
 Example:
 
 ```bash
 mattrip-cli remux --title 1 --streams 0,2 /path/to/DVD-or.iso
+mattrip-cli remux --output /path/to/output D:
+mattrip-cli remux --output /path/to/output /dev/sr0
 mattrip-cli --batch --log=/path/to/mattrip-batch.log /path/to/Movies /path/to/output
 ```
 
