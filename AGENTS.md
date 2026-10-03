@@ -3,6 +3,11 @@
 - Keep Android, Windows and Linux improvements aligned. For every media feature
   or bug fix, inspect all three implementations, update applicable counterparts,
   and test their common behavior. Document unavoidable platform differences.
+- Treat every desktop DVD input as a `DVDSource`. VIDEO_TS folders, ISO images
+  and physical optical drives must resolve through the shared source layer before
+  probing/remux/demux/Advanced Merger. Do not add a drive-only remux engine or a
+  separate title scanner. Windows optical drives are drive-letter sources; Linux
+  optical drives are block-device sources such as `/dev/sr0`.
 - Never implement a MattRip-written IFO parser. DVD titles, navigation, planning
   and chapters must come from libdvdnav/libdvdread, directly on Android or via
   FFmpeg/FFprobe dvdvideo on desktop. Do not add parser fallbacks.
