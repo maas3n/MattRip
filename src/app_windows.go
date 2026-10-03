@@ -110,6 +110,7 @@ const (
 	idSourceEdit       = 1001
 	idDVDButton        = 1002
 	idISOButton        = 1003
+	idDriveButton      = 1014
 	idOutputEdit       = 1004
 	idOutputBtn        = 1005
 	idTitleCombo       = 1006
@@ -220,6 +221,7 @@ type application struct {
 	sourceEdit       uintptr
 	sourceDVDButton  uintptr
 	sourceISOButton  uintptr
+	sourceDriveButton uintptr
 	outputEdit       uintptr
 	outputButton     uintptr
 	titleCombo       uintptr
