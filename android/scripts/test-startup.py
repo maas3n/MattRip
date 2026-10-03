@@ -19,7 +19,7 @@ def adb(*args):
 
 def screen(name):
     adb("shell", "uiautomator", "dump", "/sdcard/mattrip-startup.xml")
-    xml = adb("shell", "cat", "/sdcard/mattmux-startup.xml")
+    xml = adb("shell", "cat", "/sdcard/mattrip-startup.xml")
     (logs / (name + ".xml")).write_text(xml)
     return ET.fromstring(xml)
 
