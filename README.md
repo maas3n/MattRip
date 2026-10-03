@@ -176,7 +176,7 @@ See [`android/README.md`](android/README.md) for Android-specific implementation
 
 ## Important limitations
 
-- MattRip does not decrypt CSS or other protected DVD content.
+- The current MattRip baseline does not decrypt CSS or other protected DVD content; CSS-capable DVD access is planned fork work, not part of this cleanup.
 - Interleaved multi-angle DVD titles are unsupported on the current Android path.
 - Still/shuffle/multi-PGC DVD semantics are not fully supported on Android.
 - Android ISO input requires a seekable storage provider.
