@@ -280,17 +280,8 @@ func handleWindowsMergerCommand(id int) bool {
 			}, nil
 		})
 	case 9:
-		p := browseFolder(app.hwnd, "Choose the physical DVD drive")
-		if p == "" {
-			return true
-		}
-		drive, ok, err := resolvePhysicalDVDDrive(p)
-		if err != nil {
-			messageBox(app.hwnd, "DVD Drive", err.Error(), MB_OK|MB_ICONERROR)
-			return true
-		}
-		if !ok {
-			messageBox(app.hwnd, "DVD Drive", "The selected location is not an optical DVD/CD-ROM drive.", MB_OK|MB_ICONWARNING)
+		path := chooseWindowsPhysicalDVDDrive(app.hwnd)
+		if path == "" {
 			return true
 		}
 		runWindowsMerger("Reading DVD streams…", func(ctx context.Context) (func(), error) {
@@ -298,7 +289,7 @@ func handleWindowsMergerCommand(id int) bool {
 			if err != nil {
 				return nil, err
 			}
-			added, err := probeMergerFile(ctx, tools.ffprobe, drive.Input, "all")
+			added, err := probeMergerFile(ctx, tools.ffprobe, path, "all")
 			if err != nil {
 				return nil, err
 			}
