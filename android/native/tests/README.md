@@ -23,7 +23,7 @@ presentation timestamps are checked against the fully timestamped original.
 The timing tolerance is 1 ms for Matroska clock quantization, using one shared
 A/V origin. This covers missing PTS, not DVD cell clock discontinuities.
 
-Android DVD title discovery and title/cell/chapter planning are provided by the bundled libdvdnav/libdvdread path. Kotlin does not parse DVD IFO structures. The app logs the selected library-derived plan under `MattMuxPlan`; successful `RemuxResult` also carries it as `planJson`.
+Android DVD title discovery and title/cell/chapter planning are provided by the bundled libdvdnav/libdvdread path. Kotlin does not parse DVD IFO structures. The app logs the selected library-derived plan under `MattRipPlan`; successful `RemuxResult` also carries it as `planJson`.
 
 ## Remaining equivalence gates
 
