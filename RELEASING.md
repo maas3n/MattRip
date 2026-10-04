@@ -42,6 +42,7 @@ GitHub also exposes source ZIP/tar archives automatically for the release tag.
 
 - Merge the intended source into `main`.
 - Confirm Windows, Linux, and Android/ChromeOS CI is green.
+- For releases containing Android, confirm **Android signing self-test** is green and both pinned signing fingerprints match the intended identities.
 - Confirm pinned third-party versions/checksums and licensing/provenance documentation are current.
 - Choose a MattRip version/tag that is unused in this fork. Inherited MattMux tags are provenance and must not be reused for MattRip releases.
 - Decide whether the release is stable or a shared preview.
@@ -80,6 +81,20 @@ The **Unified release** workflow then:
 The workflow refuses to overwrite an existing GitHub Release.
 
 The same workflow can be run manually for an **existing** unified tag by using `workflow_dispatch` and supplying that tag. Manual dispatch does not invent or move tags.
+
+## Android signing gate
+
+Android uses two deliberately separate signing identities. See [`android/SIGNING.md`](android/SIGNING.md) for the complete setup.
+
+- Public GitHub APKs use the **MattRip app-signing key** from the protected `android-release` environment.
+- Play AAB uploads use the separate **MattRip upload key** from the protected `android-play` environment.
+- Repository Actions variables `ANDROID_APP_SIGNING_CERT_SHA256` and `ANDROID_UPLOAD_CERT_SHA256` pin the public certificates.
+- Run **Android signing self-test** successfully before tagging any release that is expected to include Android.
+- The two certificate fingerprints must be different.
+- The unified release workflow passes `MATTRIP_REQUIRE_SIGNING=true` and verifies the final APK certificate. It must never fall back to an unsigned or debug-signed production APK.
+- The Play workflow verifies the final AAB against the pinned upload certificate.
+
+MattRip 1.5.0 is the historical desktop-only first release: its Android job correctly stopped because no MattRip persistent signing secrets existed yet. Do not retrofit or replace assets under that immutable tag. Publish Android in a new version after signing is configured.
 
 ## Android / ChromeOS versionCode
 
