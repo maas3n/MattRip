@@ -1,6 +1,6 @@
 # MattRip for Android / ChromeOS
 
-This directory contains the experimental Android/ChromeOS frontend for MattRip. Android/ChromeOS follows the unified MattRip development line. No public MattRip APK has been released yet; future releases will use `MattRip-<version>-Android.apk`.
+This directory contains the experimental Android/ChromeOS frontend for MattRip. Android/ChromeOS follows the unified MattRip development line. MattRip 1.5.0 was released for Windows/Linux only because the new MattRip Android signing identity had not yet been configured; future Android releases use `MattRip-<version>-Android.apk`.
 
 Use `MattRip-<version>-Android.apk` on Android phones/tablets and on Chromebooks with Android app support. The same APK supports both Android and ChromeOS; no separate ChromeOS APK is required.
 
@@ -33,9 +33,9 @@ Current limitations / remaining gates:
 - ISO9660-only images and streaming-only providers are unsupported
 - real-device Android and physical Chromebook testing remain release gates
 - production Play purchase verification and rollout remain separate from the experimental GitHub APK
-- MattRip uses a separate Android application ID from MattMux; establish MattRip's own persistent signing identity before its first public APK
+- MattRip uses a separate Android application ID from MattMux; its public APK app-signing key and Play upload key must be configured and verified before the first public Android APK
 
-Run and release status should be checked in CI; source implementation alone is not proof of a tested APK. Native test details are in [`native/tests/README.md`](native/tests/README.md).
+Run and release status should be checked in CI; source implementation alone is not proof of a tested APK. Android signing setup is documented in [`SIGNING.md`](SIGNING.md), and native test details are in [`native/tests/README.md`](native/tests/README.md).
 
 ## Billing
 
