@@ -10,16 +10,29 @@ val mattRipVersionCode = providers.gradleProperty("MATTRIP_VERSION_CODE")
     .get()
     .toInt()
 
-val playStoreFile = providers.gradleProperty("MATTRIP_UPLOAD_STORE_FILE").orNull
-val playStorePassword = providers.gradleProperty("MATTRIP_UPLOAD_STORE_PASSWORD").orNull
-val playKeyAlias = providers.gradleProperty("MATTRIP_UPLOAD_KEY_ALIAS").orNull
-val playKeyPassword = providers.gradleProperty("MATTRIP_UPLOAD_KEY_PASSWORD").orNull
-val hasPlaySigning = listOf(
-    playStoreFile,
-    playStorePassword,
-    playKeyAlias,
-    playKeyPassword,
-).all { !it.isNullOrBlank() }
+val signingStoreFile = providers.gradleProperty("MATTRIP_SIGNING_STORE_FILE").orNull
+val signingStorePassword = providers.gradleProperty("MATTRIP_SIGNING_STORE_PASSWORD").orNull
+val signingKeyAlias = providers.gradleProperty("MATTRIP_SIGNING_KEY_ALIAS").orNull
+val signingKeyPassword = providers.gradleProperty("MATTRIP_SIGNING_KEY_PASSWORD").orNull
+val signingValues = listOf(
+    signingStoreFile,
+    signingStorePassword,
+    signingKeyAlias,
+    signingKeyPassword,
+)
+val hasAnyReleaseSigning = signingValues.any { !it.isNullOrBlank() }
+val hasReleaseSigning = signingValues.all { !it.isNullOrBlank() }
+val requireReleaseSigning = providers.gradleProperty("MATTRIP_REQUIRE_SIGNING")
+    .orElse("false")
+    .get()
+    .toBooleanStrictOrNull() ?: error("MATTRIP_REQUIRE_SIGNING must be true or false")
+
+if (hasAnyReleaseSigning && !hasReleaseSigning) {
+    error("Incomplete MattRip release signing configuration")
+}
+if (requireReleaseSigning && !hasReleaseSigning) {
+    error("MattRip release signing is required but no complete signing configuration was supplied")
+}
 
 android {
     namespace = "io.github.maas3n.mattmux"
@@ -42,19 +55,19 @@ android {
     }
 
     signingConfigs {
-        if (hasPlaySigning) {
-            create("playUpload") {
-                storeFile = file(requireNotNull(playStoreFile))
-                storePassword = requireNotNull(playStorePassword)
-                keyAlias = requireNotNull(playKeyAlias)
-                keyPassword = requireNotNull(playKeyPassword)
+        if (hasReleaseSigning) {
+            create("releaseSigning") {
+                storeFile = file(requireNotNull(signingStoreFile))
+                storePassword = requireNotNull(signingStorePassword)
+                keyAlias = requireNotNull(signingKeyAlias)
+                keyPassword = requireNotNull(signingKeyPassword)
             }
         }
     }
 
     buildTypes {
         getByName("release") {
-            signingConfigs.findByName("playUpload")?.let {
+            signingConfigs.findByName("releaseSigning")?.let {
                 signingConfig = it
             }
         }

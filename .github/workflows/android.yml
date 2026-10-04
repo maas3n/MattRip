@@ -10,6 +10,12 @@ on:
       - '.github/workflows/android.yml'
       - '.github/workflows/android-startup.yml'
       - '.github/workflows/release.yml'
+      - '.github/workflows/android-play.yml'
+      - '.github/workflows/android-signing-check.yml'
+      - 'scripts/android-signing-*.sh'
+      - 'scripts/verify-android-signing-cert.sh'
+      - 'scripts/test-android-signing-tools.sh'
+      - 'scripts/test-android-gradle-signing.sh'
   workflow_dispatch:
 
 concurrency:
@@ -45,6 +51,9 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Test Android signing safeguards with throwaway key
+        run: bash scripts/test-android-signing-tools.sh
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
@@ -63,6 +72,9 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.6.0'
+
+      - name: Test fail-closed Gradle release signing
+        run: bash scripts/test-android-gradle-signing.sh
 
       - name: Build bundled LGPL FFmpeg runtime
         run: |

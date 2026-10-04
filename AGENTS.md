@@ -18,6 +18,12 @@
 - Maintain scan, metadata, remux, --batch, --title, --no-chapters and --streams
   in the desktop standalone CLI and the in-app CLI. Keep the Windows/Linux
   command parser and batch discovery shared. Android uses SAF content URIs.
+- Android production signing uses two distinct identities. Direct GitHub APKs use
+  MattRip's long-lived app-signing key; Play AAB uploads use a separate upload
+  key. Pin both public certificate SHA-256 fingerprints in CI, require signed
+  production builds, and never commit private keystores or passwords. Configure
+  Play App Signing to use the MattRip app-signing identity so Play-delivered
+  installs remain compatible with direct MattRip APK updates.
 - A release is complete only when built from the same tag with Windows Setup,
   All-in-One and Portable; Linux DEB, tarball and Standalone; Android APK;
   exact source, dependency source/license notices, and verified checksums.
