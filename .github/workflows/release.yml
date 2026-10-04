@@ -403,26 +403,33 @@ jobs:
         with:
           gradle-version: '9.6.0'
 
-      - name: Require Android distribution signing secrets
+      - name: Require Android app-signing secrets and certificate pin
         env:
-          KEYSTORE_B64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
-          STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+          KEYSTORE_B64: ${{ secrets.ANDROID_APP_SIGNING_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_APP_SIGNING_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_APP_SIGNING_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_APP_SIGNING_KEY_PASSWORD }}
+          CERT_SHA256: ${{ vars.ANDROID_APP_SIGNING_CERT_SHA256 }}
         run: |
           set -euo pipefail
-          test -n "$KEYSTORE_B64" || { echo 'Missing ANDROID_UPLOAD_KEYSTORE_BASE64' >&2; exit 1; }
-          test -n "$STORE_PASSWORD" || { echo 'Missing ANDROID_UPLOAD_STORE_PASSWORD' >&2; exit 1; }
-          test -n "$KEY_ALIAS" || { echo 'Missing ANDROID_UPLOAD_KEY_ALIAS' >&2; exit 1; }
-          test -n "$KEY_PASSWORD" || { echo 'Missing ANDROID_UPLOAD_KEY_PASSWORD' >&2; exit 1; }
+          test -n "$KEYSTORE_B64" || { echo 'Missing ANDROID_APP_SIGNING_KEYSTORE_BASE64' >&2; exit 1; }
+          test -n "$STORE_PASSWORD" || { echo 'Missing ANDROID_APP_SIGNING_STORE_PASSWORD' >&2; exit 1; }
+          test -n "$KEY_ALIAS" || { echo 'Missing ANDROID_APP_SIGNING_KEY_ALIAS' >&2; exit 1; }
+          test -n "$KEY_PASSWORD" || { echo 'Missing ANDROID_APP_SIGNING_KEY_PASSWORD' >&2; exit 1; }
+          test -n "$CERT_SHA256" || { echo 'Missing Actions variable ANDROID_APP_SIGNING_CERT_SHA256' >&2; exit 1; }
 
-      - name: Prepare Android distribution keystore
+      - name: Prepare and verify Android app-signing identity
         env:
-          KEYSTORE_B64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+          KEYSTORE_B64: ${{ secrets.ANDROID_APP_SIGNING_KEYSTORE_BASE64 }}
+          MATTRIP_SIGNING_KEYSTORE: ${{ runner.temp }}/mattrip-app-signing.jks
+          MATTRIP_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_APP_SIGNING_STORE_PASSWORD }}
+          MATTRIP_SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_APP_SIGNING_KEY_ALIAS }}
+          MATTRIP_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_APP_SIGNING_KEY_PASSWORD }}
+          MATTRIP_EXPECTED_CERT_SHA256: ${{ vars.ANDROID_APP_SIGNING_CERT_SHA256 }}
         run: |
           set -euo pipefail
-          printf '%s' "$KEYSTORE_B64" | base64 --decode > "${RUNNER_TEMP}/mattrip-upload.jks"
-          test -s "${RUNNER_TEMP}/mattrip-upload.jks"
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$MATTRIP_SIGNING_KEYSTORE"
+          bash scripts/android-signing-preflight.sh "MattRip app-signing key"
 
       - name: Build bundled LGPL FFmpeg runtime
         run: |
@@ -438,14 +445,15 @@ jobs:
 
       - name: Test, lint and build signed versioned APK
         env:
-          ORG_GRADLE_PROJECT_MATTRIP_UPLOAD_STORE_FILE: ${{ runner.temp }}/mattrip-upload.jks
-          ORG_GRADLE_PROJECT_MATTRIP_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
-          ORG_GRADLE_PROJECT_MATTRIP_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
-          ORG_GRADLE_PROJECT_MATTRIP_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+          ORG_GRADLE_PROJECT_MATTRIP_SIGNING_STORE_FILE: ${{ runner.temp }}/mattrip-app-signing.jks
+          ORG_GRADLE_PROJECT_MATTRIP_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_APP_SIGNING_STORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_MATTRIP_SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_APP_SIGNING_KEY_ALIAS }}
+          ORG_GRADLE_PROJECT_MATTRIP_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_APP_SIGNING_KEY_PASSWORD }}
         run: |
           gradle -p android \
             -PMATTRIP_VERSION_NAME='${{ needs.metadata.outputs.version }}' \
             -PMATTRIP_VERSION_CODE='${{ needs.metadata.outputs.android_version_code }}' \
+            -PMATTRIP_REQUIRE_SIGNING=true \
             :app:testDebugUnitTest :app:lintRelease :app:assembleRelease
 
       - name: Verify version and bundled native libraries
@@ -466,6 +474,10 @@ jobs:
           "${ANDROID_HOME}/build-tools/36.0.0/zipalign" -c -P 16 -v 4 "$APK"
           "${ANDROID_HOME}/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK" | tee /tmp/mattrip-apksigner.txt
           ! grep -Fq "CN=Android Debug" /tmp/mattrip-apksigner.txt
+          bash scripts/verify-android-signing-cert.sh \
+            "$APK" \
+            '${{ vars.ANDROID_APP_SIGNING_CERT_SHA256 }}' \
+            "${ANDROID_HOME}/build-tools/36.0.0/apksigner"
 
       - name: Prepare Android / ChromeOS release payload
         run: |
