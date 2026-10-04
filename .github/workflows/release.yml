@@ -372,6 +372,7 @@ jobs:
   android:
     needs: metadata
     runs-on: ubuntu-latest
+    environment: android-release
     steps:
       - name: Check out tagged source
         uses: actions/checkout@v4
