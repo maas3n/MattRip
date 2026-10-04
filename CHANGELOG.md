@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Separate Android app-signing and Play upload identities so direct GitHub APKs and Play AAB uploads no longer reuse one key role.
+- Pin the expected SHA-256 certificate for each Android signing identity and verify the final APK/AAB certificate before publication.
+- Add protected `android-release` / `android-play` signing environments, a lightweight signing self-test workflow, throwaway-key CI regressions, safe key-generation tooling, and release-signing documentation.
+
+
 ## 1.5.0 - 2026-10-04
 
 - Add a shared desktop `DVDSource` foundation for VIDEO_TS folders, DVD ISOs and physical optical drives.
