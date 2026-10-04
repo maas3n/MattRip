@@ -18,6 +18,7 @@ permissions:
 jobs:
   play-bundle:
     runs-on: ubuntu-latest
+    environment: android-play
     env:
       FFMPEG_VERSION: '9.0.1'
       ANDROID_NDK_VERSION: '30.0.16248370'
