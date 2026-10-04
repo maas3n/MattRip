@@ -15,6 +15,7 @@ on:
       - 'scripts/android-signing-*.sh'
       - 'scripts/verify-android-signing-cert.sh'
       - 'scripts/test-android-signing-tools.sh'
+      - 'scripts/test-android-gradle-signing.sh'
   workflow_dispatch:
 
 concurrency:
@@ -71,6 +72,9 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.6.0'
+
+      - name: Test fail-closed Gradle release signing
+        run: bash scripts/test-android-gradle-signing.sh
 
       - name: Build bundled LGPL FFmpeg runtime
         run: |
