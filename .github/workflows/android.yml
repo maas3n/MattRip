@@ -10,6 +10,11 @@ on:
       - '.github/workflows/android.yml'
       - '.github/workflows/android-startup.yml'
       - '.github/workflows/release.yml'
+      - '.github/workflows/android-play.yml'
+      - '.github/workflows/android-signing-check.yml'
+      - 'scripts/android-signing-*.sh'
+      - 'scripts/verify-android-signing-cert.sh'
+      - 'scripts/test-android-signing-tools.sh'
   workflow_dispatch:
 
 concurrency:
@@ -44,6 +49,9 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+
+      - name: Test Android signing safeguards with throwaway key
+        run: bash scripts/test-android-signing-tools.sh
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
