@@ -7,8 +7,9 @@ permissions:
   contents: read
 
 jobs:
-  signing:
+  app-signing:
     runs-on: ubuntu-latest
+    environment: android-release
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,24 +19,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-
-      - name: Require signing identities
-        env:
-          APP_KEYSTORE_B64: ${{ secrets.ANDROID_APP_SIGNING_KEYSTORE_BASE64 }}
-          APP_STORE_PASSWORD: ${{ secrets.ANDROID_APP_SIGNING_STORE_PASSWORD }}
-          APP_KEY_ALIAS: ${{ secrets.ANDROID_APP_SIGNING_KEY_ALIAS }}
-          APP_KEY_PASSWORD: ${{ secrets.ANDROID_APP_SIGNING_KEY_PASSWORD }}
-          APP_CERT_SHA256: ${{ vars.ANDROID_APP_SIGNING_CERT_SHA256 }}
-          UPLOAD_KEYSTORE_B64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
-          UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
-          UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
-          UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
-          UPLOAD_CERT_SHA256: ${{ vars.ANDROID_UPLOAD_CERT_SHA256 }}
-        run: |
-          set -euo pipefail
-          for name in             APP_KEYSTORE_B64 APP_STORE_PASSWORD APP_KEY_ALIAS APP_KEY_PASSWORD APP_CERT_SHA256             UPLOAD_KEYSTORE_B64 UPLOAD_STORE_PASSWORD UPLOAD_KEY_ALIAS UPLOAD_KEY_PASSWORD UPLOAD_CERT_SHA256; do
-            test -n "${!name}" || { echo "Missing signing setting: $name" >&2; exit 1; }
-          done
 
       - name: Verify app-signing key
         env:
@@ -50,6 +33,19 @@ jobs:
           printf '%s' "$KEYSTORE_B64" | base64 --decode > "$MATTRIP_SIGNING_KEYSTORE"
           bash scripts/android-signing-preflight.sh "MattRip app-signing key"
 
+  upload-signing:
+    runs-on: ubuntu-latest
+    environment: android-play
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: Verify Play upload key
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
@@ -63,6 +59,10 @@ jobs:
           printf '%s' "$KEYSTORE_B64" | base64 --decode > "$MATTRIP_SIGNING_KEYSTORE"
           bash scripts/android-signing-preflight.sh "MattRip Play upload key"
 
+  distinct-identities:
+    needs: [app-signing, upload-signing]
+    runs-on: ubuntu-latest
+    steps:
       - name: Require distinct app-signing and upload certificates
         env:
           APP_CERT_SHA256: ${{ vars.ANDROID_APP_SIGNING_CERT_SHA256 }}
