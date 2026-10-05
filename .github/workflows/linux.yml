@@ -32,7 +32,7 @@ jobs:
           sudo sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
           sudo apt-get update
           sudo apt-get install -y \
-            gcc g++ cmake ninja-build curl xz-utils file ffmpeg mediainfo dvdauthor genisoimage \
+            gcc g++ cmake meson ninja-build curl xz-utils file ffmpeg mediainfo dvdauthor genisoimage \
             libgl1-mesa-dev libgl1-mesa-dri libglx-mesa0 libegl-mesa0 xvfb xorg-dev libwayland-dev libxkbcommon-dev
           # Match preinstalled transitive libraries to the current deb-src index.
           # Ubuntu removes superseded security sources from that index.
@@ -142,11 +142,15 @@ jobs:
           test -x "$tmp/usr/lib/mattrip/ffmpeg-bin/ffmpeg"
           test -x "$tmp/usr/lib/mattrip/ffmpeg-bin/ffprobe"
           test -x "$tmp/usr/lib/mattrip/mediainfo-bin/mediainfo"
+          test -e "$tmp/usr/lib/mattrip/ffmpeg-bin/libdvdcss.so.2"
+          test -s "$tmp/usr/share/doc/mattrip/libdvdcss-1.6.0-source.tar.xz"
           test ! -e "$tmp/usr/bin/ffmpeg"
           test ! -e "$tmp/usr/bin/ffprobe"
           test ! -e "$tmp/usr/bin/mediainfo"
           grep -F 'PATH="$FFDIR:$MIDIR:$PATH"' "$tmp/usr/bin/mattrip"
           grep -F 'PATH="$FFDIR:$MIDIR:$PATH"' "$tmp/usr/bin/mattrip-cli"
+          grep -F 'LD_LIBRARY_PATH="$FFDIR' "$tmp/usr/bin/mattrip"
+          grep -F 'LD_LIBRARY_PATH="$FFDIR' "$tmp/usr/bin/mattrip-cli"
           ! grep -q 'command -v ffmpeg' "$tmp/usr/bin/mattrip"
           ! grep -q 'command -v ffmpeg' "$tmp/usr/bin/mattrip-cli"
           "$tmp/usr/lib/mattrip/ffmpeg-bin/ffmpeg" -hide_banner -demuxers 2>/dev/null | grep dvdvideo
