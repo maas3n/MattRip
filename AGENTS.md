@@ -11,6 +11,14 @@
 - Never implement a MattRip-written IFO parser. DVD titles, navigation, planning
   and chapters must come from libdvdnav/libdvdread, directly on Android or via
   FFmpeg/FFprobe dvdvideo on desktop. Do not add parser fallbacks.
+- Desktop CSS support must extend that same dvdvideo/libdvdread path by making a
+  pinned private libdvdcss runtime available dynamically. Do not add a second
+  CSS-specific title scanner or remux engine. Preserve the exact libdvdcss source,
+  checksum, license, and build provenance in self-contained release packages.
+- Do not mark Android CSS as supported merely because libdvdcss can be linked to
+  the DVDNav scanner. Android remux/demux currently reads VOB/UDF payload sectors
+  directly; CSS support is complete only when those payload reads use a verified
+  decrypted-sector path and the native regressions cover it.
 - BATCH accepts DVD folders and unmounted ISOs. Blank output means an MKV beside
   the ISO or beside VIDEO_TS in the movie folder, never inside VIDEO_TS. An
   explicit output directory overrides this. Never overwrite existing outputs;
