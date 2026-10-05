@@ -103,6 +103,30 @@ jobs:
           go-version: '1.27.1'
           cache: false
 
+      - name: Set up MSYS2 MinGW64 for libdvdcss
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            coreutils
+            curl
+            tar
+            xz
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-meson
+            mingw-w64-x86_64-ninja
+
+      - name: Build pinned Windows libdvdcss runtime
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          prefix="$(cygpath -u "$RUNNER_TEMP")/mattrip-libdvdcss"
+          work="$(cygpath -u "$RUNNER_TEMP")/mattrip-libdvdcss-work"
+          LIBDVDCSS_PREFIX="$prefix" LIBDVDCSS_WORK="$work" bash scripts/build-libdvdcss.sh
+          dll="$(find "$prefix" -type f -iname 'libdvdcss*.dll' -print -quit)"
+          test -n "$dll"
+          file "$dll"
 
       - name: Test and build Windows GUI
         shell: pwsh
@@ -147,6 +171,18 @@ jobs:
           $ffDest = Join-Path $stage 'ffmpeg-2026-09-08'
           New-Item -ItemType Directory -Force -Path $ffDest | Out-Null
           Copy-Item (Join-Path $ffBin '*') $ffDest -Force
+
+          $cssRoot = Join-Path $env:RUNNER_TEMP 'mattrip-libdvdcss'
+          $cssDll = Get-ChildItem $cssRoot -Filter 'libdvdcss*.dll' -File -Recurse | Select-Object -First 1
+          if ($null -eq $cssDll) { throw 'libdvdcss DLL missing from pinned build' }
+          Copy-Item $cssDll.FullName (Join-Path $ffDest 'libdvdcss-2.dll') -Force
+          $cssNoticeRoot = Join-Path $cssRoot 'share\mattrip\libdvdcss'
+          $cssLicenseDir = Join-Path $ffDest 'licenses\libdvdcss'
+          New-Item -ItemType Directory -Force -Path $cssLicenseDir | Out-Null
+          Copy-Item (Join-Path $cssNoticeRoot 'COPYING') $cssLicenseDir -Force
+          Copy-Item (Join-Path $cssNoticeRoot 'BUILD-INFO.txt') $cssLicenseDir -Force
+          Copy-Item (Join-Path $cssNoticeRoot 'libdvdcss-1.6.0-source.tar.xz') $cssLicenseDir -Force
+          if (-not (Test-Path (Join-Path $ffDest 'libdvdcss-2.dll'))) { throw 'libdvdcss runtime was not staged beside FFmpeg' }
 
           $miArchive = Join-Path $work $miAsset
           Invoke-WebRequest -UseBasicParsing -Uri "https://mediaarea.net/download/binary/mediainfo/$miVersion/$miAsset" -OutFile $miArchive
@@ -307,7 +343,7 @@ jobs:
           sudo sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
           sudo apt-get update
           sudo apt-get install -y \
-            gcc g++ cmake ninja-build curl xz-utils file \
+            gcc g++ cmake meson ninja-build curl xz-utils file \
             libgl1-mesa-dev libgl1-mesa-dri libglx-mesa0 libegl-mesa0 xvfb xorg-dev libwayland-dev libxkbcommon-dev
           # Match preinstalled transitive libraries to the current deb-src index.
           # Ubuntu removes superseded security sources from that index.
@@ -342,6 +378,8 @@ jobs:
           test -x "$tmp/usr/lib/mattrip/ffmpeg-bin/ffmpeg"
           test -x "$tmp/usr/lib/mattrip/ffprobe-bin/ffprobe" || test -x "$tmp/usr/lib/mattrip/ffmpeg-bin/ffprobe"
           test -x "$tmp/usr/lib/mattrip/mediainfo-bin/mediainfo"
+          test -e "$tmp/usr/lib/mattrip/ffmpeg-bin/libdvdcss.so.2"
+          test -s "$tmp/usr/share/doc/mattrip/libdvdcss-1.6.0-source.tar.xz"
 
           test -x "$standalone"
           file "$standalone" | grep -E 'ELF 64-bit.*x86-64'
