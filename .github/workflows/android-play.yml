@@ -93,6 +93,10 @@ jobs:
 
       - name: Build bundled LGPL FFmpeg runtime
         run: |
+          # Keep the Play-distributed bundle CSS-free until the separate Play
+          # policy/distribution review is completed. Direct GitHub Android
+          # builds exercise the CSS-capable JNI path.
+          MATTRIP_ANDROID_CSS=0 \
           ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}" \
             bash android/native/build-ffmpeg-android.sh
 
