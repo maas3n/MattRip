@@ -611,6 +611,7 @@ func remuxTitle(ctx context.Context, src string, title titleInfo, outDir string,
 	}
 	args = append(args, "-progress", "pipe:1", "-nostats", partial)
 	cmd := exec.CommandContext(ctx, tools.ffmpeg, args...)
+	configureDVDLibrarySearch(cmd, tools.ffmpeg)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return "", err
@@ -666,6 +667,7 @@ func remuxTitle(ctx context.Context, src string, title titleInfo, outDir string,
 
 func runCommand(ctx context.Context, path string, args ...string) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, path, args...)
+	configureDVDLibrarySearch(cmd, path)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
