@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add pinned libdvdcss 1.6.0 build/provenance and private Windows/Linux release runtimes for CSS-protected DVD access through the existing FFmpeg dvdvideo + libdvdread path.
+- Keep Linux libdvdcss search paths scoped to MattRip child media tools and add cross-platform CI that builds the pinned runtime independently of Android production signing.
+- Keep Android CSS explicitly unsupported for now; its SAF/UDF remux path needs decrypted sector I/O rather than only adding libdvdcss to title discovery.
+
 - Separate Android app-signing and Play upload identities so direct GitHub APKs and Play AAB uploads no longer reuse one key role.
 - Pin the expected SHA-256 certificate for each Android signing identity and verify the final APK/AAB certificate before publication.
 - Add protected `android-release` / `android-play` signing environments, a lightweight signing self-test workflow, throwaway-key CI regressions, safe key-generation tooling, and release-signing documentation.
