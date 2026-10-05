@@ -4,7 +4,7 @@
 
 MattRip can remux DVD-Video titles to MKV, extract individual streams from DVD or MKV sources, combine selected streams from multiple files, and batch-remux DVD libraries. Windows, Linux, and Android/ChromeOS are developed together from the single `main` branch and use one shared product version.
 
-> Windows and Linux now accept **physical DVD drives** as desktop DVD sources in DVD Remux/Demux, Advanced Merger, and the single-disc CLI. CSS handling is **not included yet**, and Android USB optical-drive support remains a separate milestone.
+> Windows and Linux accept **physical DVD drives** as desktop DVD sources in DVD Remux/Demux, Advanced Merger, and the single-disc CLI. Current development builds also package pinned **libdvdcss 1.6.0** with the self-contained Windows/Linux runtimes so the existing FFmpeg `dvdvideo` + libdvdread path can access CSS-protected DVD sources. Android CSS and Android USB optical-drive support remain separate milestones.
 
 ## Latest stable release: MattRip 1.5.0
 
@@ -28,7 +28,7 @@ For DVD sources, MattRip discovers DVD titles, automatically selects the longest
 
 Choose **Start Remux** to create an MKV using stream copy. Chapter preservation is optional.
 
-Windows and Linux use FFmpeg's `dvdvideo` input backed by `libdvdread`/`libdvdnav`. Android/ChromeOS uses its native FFmpeg/libav, libdvdnav, libdvdread, and libudfread path. MattRip does not use its own DVD IFO parser.
+Windows and Linux use FFmpeg's `dvdvideo` input backed by `libdvdread`/`libdvdnav`. Self-contained desktop builds keep libdvdcss private to MattRip and let libdvdread discover it dynamically; no separate CSS remux engine is introduced. Android/ChromeOS uses its native FFmpeg/libav, libdvdnav, libdvdread, and libudfread path and does not include CSS support yet. MattRip does not use its own DVD IFO parser.
 
 ### Demux
 
