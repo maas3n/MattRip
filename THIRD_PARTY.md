@@ -46,6 +46,18 @@ Linux MediaInfo is built from an exact pinned source set rather than from moving
 
 The self-contained Linux packages keep the resulting MediaInfo binary private to MattRip and do not replace `/usr/bin/mediainfo`.
 
+### libdvdcss
+
+Self-contained Windows and Linux packages build and bundle a private libdvdcss runtime for libdvdread to discover dynamically when reading CSS-protected DVD sources.
+
+- Version: `1.6.0`
+- Upstream source: VideoLAN libdvdcss 1.6.0 release tarball
+- Trusted source SHA-256: `7ea556c846b7bfc32d47b41cae56d1863a6b6d5f706bb162778d6f298490977c`
+- License: GPL-2.0-or-later
+- Integration: private shared library loaded by libdvdread; MattRip does not replace the existing FFmpeg `dvdvideo` title/remux/demux path
+
+The release packages retain the exact libdvdcss source archive, COPYING file, and build metadata. Linux keeps the library in MattRip's private runtime search path; Windows keeps `libdvdcss-2.dll` beside the private FFmpeg tools. Android/ChromeOS does not bundle libdvdcss yet because its current remux path reads selected VOB/UDF data directly rather than through libdvdread's sector I/O.
+
 ## Inherited MattMux Android / ChromeOS Alpha 4 provenance
 
 The Android/ChromeOS app uses native FFmpeg libraries, libudfread, and the DVD title-discovery pair proven by the 1.4.2 DVDNav Beta 1.
@@ -66,7 +78,7 @@ MattRip itself is licensed under MIT. Third-party projects keep their own licens
 
 The Windows and Linux FFmpeg distributions currently used by MattRip are GPL-enabled builds because the desktop DVD workflow depends on FFmpeg's `dvdvideo` support with the relevant DVD libraries. The Android FFmpeg build is handled separately under its own build configuration and licensing requirements.
 
-Anyone redistributing MattRip together with third-party binaries should review and satisfy the corresponding FFmpeg, BtbN/FFmpeg-Builds, MediaInfo, MediaInfoLib, ZenLib, zlib, libudfread, and other applicable license/source-distribution obligations.
+Anyone redistributing MattRip together with third-party binaries should review and satisfy the corresponding FFmpeg, BtbN/FFmpeg-Builds, MediaInfo, MediaInfoLib, ZenLib, zlib, libudfread, libdvdcss, and other applicable license/source-distribution obligations.
 
 ## Preserved desktop FFmpeg build inputs
 
