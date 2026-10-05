@@ -11,19 +11,41 @@ ANDROID_API="${ANDROID_API:-26}"
 
 DVDREAD_VERSION=6.1.3
 DVDNAV_VERSION=6.1.1
+DVDCSS_VERSION=1.6.0
+DVDCSS_SHA256=7ea556c846b7bfc32d47b41cae56d1863a6b6d5f706bb162778d6f298490977c
+MATTRIP_ANDROID_CSS="${MATTRIP_ANDROID_CSS:-1}"
+case "$MATTRIP_ANDROID_CSS" in
+  0|1) ;;
+  *) echo "MATTRIP_ANDROID_CSS must be 0 or 1" >&2; exit 1 ;;
+esac
 READ_SRC="$WORK/libdvdread"
 NAV_SRC="$WORK/libdvdnav"
-rm -rf "$READ_SRC" "$NAV_SRC"
+CSS_SRC="$WORK/libdvdcss-${DVDCSS_VERSION}"
+CSS_ARCHIVE="$WORK/libdvdcss-${DVDCSS_VERSION}.tar.xz"
+rm -rf "$READ_SRC" "$NAV_SRC" "$CSS_SRC"
 git clone --depth 1 --branch "$DVDREAD_VERSION" https://code.videolan.org/videolan/libdvdread.git "$READ_SRC"
 git clone --depth 1 --branch "$DVDNAV_VERSION" https://code.videolan.org/videolan/libdvdnav.git "$NAV_SRC"
+if [[ "$MATTRIP_ANDROID_CSS" == "1" ]]; then
+    curl --fail --location --retry 3 --proto '=https' --tlsv1.2 \
+      -o "$CSS_ARCHIVE" "https://download.videolan.org/libdvdcss/${DVDCSS_VERSION}/libdvdcss-${DVDCSS_VERSION}.tar.xz"
+    printf '%s  %s\n' "$DVDCSS_SHA256" "$CSS_ARCHIVE" | sha256sum --check --strict
+    tar -xJf "$CSS_ARCHIVE" -C "$WORK"
+    test -f "$CSS_SRC/COPYING"
+fi
 READ_COMMIT="$(git -C "$READ_SRC" rev-parse HEAD)"
 NAV_COMMIT="$(git -C "$NAV_SRC" rev-parse HEAD)"
 git -C "$READ_SRC" archive --format=tar --prefix="libdvdread-${DVDREAD_VERSION}/" HEAD | gzip -n > "$WORK/libdvdread-${DVDREAD_VERSION}-source.tar.gz"
 git -C "$NAV_SRC" archive --format=tar --prefix="libdvdnav-${DVDNAV_VERSION}/" HEAD | gzip -n > "$WORK/libdvdnav-${DVDNAV_VERSION}-source.tar.gz"
 cp "$READ_SRC/COPYING" "$ASSET_ROOT/DVDREAD_COPYING.txt"
 cp "$NAV_SRC/COPYING" "$ASSET_ROOT/DVDNAV_COPYING.txt"
+if [[ "$MATTRIP_ANDROID_CSS" == "1" ]]; then
+    cp "$CSS_SRC/COPYING" "$ASSET_ROOT/LIBDVDCSS_COPYING.txt"
+fi
 (cd "$READ_SRC" && autoreconf -fi)
 (cd "$NAV_SRC" && autoreconf -fi)
+if [[ "$MATTRIP_ANDROID_CSS" == "1" ]]; then
+    (cd "$CSS_SRC" && autoreconf -fi)
+fi
 
 case "$(uname -s)-$(uname -m)" in
   Linux-x86_64) HOST_TAG=linux-x86_64 ;;
@@ -43,16 +65,39 @@ build_one() {
     local jni="$JNI_ROOT/${abi}"
     local read_build="$WORK/build-dvdread-${abi}"
     local nav_build="$WORK/build-dvdnav-${abi}"
-    rm -rf "$read_build" "$nav_build"
+    local css_build="$WORK/build-dvdcss-${abi}"
+    rm -rf "$read_build" "$nav_build" "$css_build"
     mkdir -p "$read_build" "$nav_build"
+    if [[ "$MATTRIP_ANDROID_CSS" == "1" ]]; then
+        mkdir -p "$css_build"
+        (
+            cd "$css_build"
+            CC="$cc" AR="$AR" RANLIB="$RANLIB" STRIP="$STRIP" \
+              CFLAGS='-O2 -fPIC' LDFLAGS='-Wl,-z,max-page-size=16384' \
+              "$CSS_SRC/configure" --host="$target" --prefix="$prefix" --enable-static --disable-shared
+            make -j2
+            make install
+        )
+        test -s "$prefix/lib/libdvdcss.a"
+        test -f "$prefix/include/dvdcss/dvdcss.h"
+    fi
 
     test -d "$prefix/include" && test -d "$jni"
 
     (
         cd "$read_build"
-        CC="$cc" AR="$AR" RANLIB="$RANLIB" STRIP="$STRIP" \
-          CFLAGS='-O2 -fPIC' LDFLAGS='-Wl,-z,max-page-size=16384' \
-          "$READ_SRC/configure" --host="$target" --prefix="$prefix" --enable-static --disable-shared
+        if [[ "$MATTRIP_ANDROID_CSS" == "1" ]]; then
+            PKG_CONFIG_PATH="$prefix/lib/pkgconfig" \
+              CSS_CFLAGS="-I$prefix/include" CSS_LIBS="-L$prefix/lib -ldvdcss" \
+              CC="$cc" AR="$AR" RANLIB="$RANLIB" STRIP="$STRIP" \
+              CFLAGS='-O2 -fPIC' LDFLAGS='-Wl,-z,max-page-size=16384' \
+              "$READ_SRC/configure" --host="$target" --prefix="$prefix" \
+              --enable-static --disable-shared --with-libdvdcss
+        else
+            CC="$cc" AR="$AR" RANLIB="$RANLIB" STRIP="$STRIP" \
+              CFLAGS='-O2 -fPIC' LDFLAGS='-Wl,-z,max-page-size=16384' \
+              "$READ_SRC/configure" --host="$target" --prefix="$prefix" --enable-static --disable-shared
+        fi
         make -j2
         make install
     )
@@ -67,13 +112,20 @@ build_one() {
         make install
     )
 
+    local css_define=()
+    local css_lib=()
+    if [[ "$MATTRIP_ANDROID_CSS" == "1" ]]; then
+        css_define=(-DMATTMUX_DVDCSS=1)
+        css_lib=(-ldvdcss)
+    fi
+
     "$cc" \
-        -shared -fPIC -O2 -DMATTMUX_DVDNAV=1 \
+        -shared -fPIC -O2 -DMATTMUX_DVDNAV=1 "${css_define[@]}" \
         -I"$prefix/include" -I"$prefix/include/udfread" \
         "$SCRIPT_DIR/mattmux_jni.c" "$SCRIPT_DIR/udf_source.c" \
         -L"$jni" -L"$prefix/lib" -Wl,--no-as-needed \
         -lavformat -lavcodec -lavutil -ludfread \
-        -ldvdnav -ldvdread -ldl -lm \
+        -ldvdnav -ldvdread "${css_lib[@]}" -ldl -lm \
         -Wl,-z,max-page-size=16384 -llog -Wl,--no-undefined \
         -Wl,-soname,libmattmux_jni.so -o "$jni/libmattmux_jni.so"
 
@@ -91,9 +143,15 @@ build_one() {
     grep -q 'dvdnav_get_number_of_titles' "$nav_build/jni-symbols.txt"
     grep -q 'dvdnav_describe_title_chapters' "$nav_build/jni-symbols.txt"
     grep -q 'DVDOpen' "$nav_build/jni-symbols.txt"
+    # libdvdcss is linked statically when enabled; no standalone JNI dependency
+    # should be required at runtime.
     patchelf --print-needed "$jni/libmattmux_jni.so" | grep -Eiq 'dvdcss' && {
-        echo 'libdvdcss must not be bundled' >&2; exit 1;
+        echo 'libdvdcss must remain statically linked into the JNI runtime' >&2; exit 1;
     } || true
+    if [[ "$MATTRIP_ANDROID_CSS" == "1" ]]; then
+        grep -q 'dvdcss_open_stream' "$nav_build/jni-symbols.txt"
+        grep -q 'dvdcss_read' "$nav_build/jni-symbols.txt"
+    fi
     "$STRIP" --strip-unneeded "$jni/libmattmux_jni.so"
 }
 
@@ -107,7 +165,7 @@ Title discovery: libdvdnav ${DVDNAV_VERSION} + libdvdread ${DVDREAD_VERSION}
 Integration: GPL DVD libraries statically linked into libmattmux_jni.so for title discovery
 libdvdread commit: ${READ_COMMIT}
 libdvdnav commit: ${NAV_COMMIT}
-CSS decryption/circumvention: not included
+CSS support: $(if [[ "$MATTRIP_ANDROID_CSS" == "1" ]]; then printf 'libdvdcss %s (GPL; statically linked into JNI)' "$DVDCSS_VERSION"; else printf 'not included'; fi)
 EOF
 
 # The unified release workflow uploads every file already present in
@@ -120,9 +178,17 @@ cp "$WORK/libdvdread-${DVDREAD_VERSION}-source.tar.gz" "$RELEASE_STAGE/"
 cp "$WORK/libdvdnav-${DVDNAV_VERSION}-source.tar.gz" "$RELEASE_STAGE/"
 cp "$ASSET_ROOT/DVDREAD_COPYING.txt" "$RELEASE_STAGE/"
 cp "$ASSET_ROOT/DVDNAV_COPYING.txt" "$RELEASE_STAGE/"
+if [[ "$MATTRIP_ANDROID_CSS" == "1" ]]; then
+    cp "$CSS_ARCHIVE" "$RELEASE_STAGE/libdvdcss-${DVDCSS_VERSION}-source.tar.xz"
+    cp "$ASSET_ROOT/LIBDVDCSS_COPYING.txt" "$RELEASE_STAGE/"
+fi
 test -s "$RELEASE_STAGE/libdvdread-${DVDREAD_VERSION}-source.tar.gz"
 test -s "$RELEASE_STAGE/libdvdnav-${DVDNAV_VERSION}-source.tar.gz"
 test -s "$RELEASE_STAGE/DVDREAD_COPYING.txt"
 test -s "$RELEASE_STAGE/DVDNAV_COPYING.txt"
+if [[ "$MATTRIP_ANDROID_CSS" == "1" ]]; then
+    test -s "$RELEASE_STAGE/libdvdcss-${DVDCSS_VERSION}-source.tar.xz"
+    test -s "$RELEASE_STAGE/LIBDVDCSS_COPYING.txt"
+fi
 
-echo "libdvdnav/libdvdread Android title scanner built successfully."
+echo "libdvdnav/libdvdread Android title scanner built successfully (CSS=${MATTRIP_ANDROID_CSS})."
