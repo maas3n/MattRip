@@ -26,6 +26,8 @@ test -f "$source_dir/COPYING" || { echo "libdvdcss source archive is missing COP
 
 meson setup "$build_dir" "$source_dir" \
     --prefix="$PREFIX" \
+    --libdir=lib \
+    --bindir=bin \
     --buildtype=release \
     --default-library=shared
 meson compile -C "$build_dir"
