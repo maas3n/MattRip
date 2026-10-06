@@ -2,7 +2,7 @@
 
 Advanced Merger combines selected video, audio, subtitle, attachment/data, and optional chapter data into a new Matroska (`.mkv`) file without transcoding.
 
-The feature is available from the **Advanced Merger** tab. It is separate from the DVD-title remux workflow.
+The feature is available from the **ADVANCED** tab. It is separate from the **REMUX/DEMUX** workflow.
 
 ## Inputs
 
