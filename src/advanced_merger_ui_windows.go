@@ -59,20 +59,21 @@ func createMergerWindowsControls(hwnd, hInstance uintptr) {
 		item := mergerTabItem{Mask: 1, Text: utf16Ptr(label)}
 		procSendMessageW.Call(mergerWindow.tab, 0x133e, uintptr(i), uintptr(unsafe.Pointer(&item)))
 	}
-	// Keep the short movie button compact so the two stream-specific actions get
-	// enough width to remain centered and readable at Windows DPI scaling levels.
-	add("BUTTON", "MOVIE FILES", BS_PUSHBUTTON, 28, 52, 166, 34, mergerFirstID)
-	add("BUTTON", "DVD DRIVE", BS_PUSHBUTTON, 202, 52, 142, 34, mergerFirstID+9)
-	add("BUTTON", "AUDIO / MKV / RAW", BS_PUSHBUTTON, 352, 52, 204, 34, mergerFirstID+1)
-	add("BUTTON", "SUBTITLE / MKV / RAW", BS_PUSHBUTTON, 564, 52, 214, 34, mergerFirstID+2)
-	add("STATIC", "Select Streams", 0, 28, 94, 750, 22, 0)
-	mergerWindow.list = add("SysListView32", "", WS_BORDER|LVS_REPORT|LVS_SHOWSELALWAYS, 28, 120, 750, 235, 0)
+	// Keep the explanatory source labels readable without widening the main window.
+	// MEDIA and DVD DRIVE occupy the first row; the category-filtered additions use
+	// the second row so the parenthetical behavior stays visible at normal DPI.
+	add("BUTTON", "MEDIA(All streams included)", BS_PUSHBUTTON, 28, 52, 370, 34, mergerFirstID)
+	add("BUTTON", "DVD DRIVE", BS_PUSHBUTTON, 408, 52, 370, 34, mergerFirstID+9)
+	add("BUTTON", "ADD AUDIO(Only audio streams will be included)", BS_PUSHBUTTON, 28, 94, 370, 34, mergerFirstID+1)
+	add("BUTTON", "ADD SUBTITLE(Only subtitle streams will be Included)", BS_PUSHBUTTON, 408, 94, 370, 34, mergerFirstID+2)
+	add("STATIC", "Select Streams", 0, 28, 136, 750, 22, 0)
+	mergerWindow.list = add("SysListView32", "", WS_BORDER|LVS_REPORT|LVS_SHOWSELALWAYS, 28, 162, 750, 193, 0)
 	procSendMessageW.Call(mergerWindow.list, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, LVS_EX_CHECKBOXES|LVS_EX_FULLROWSELECT)
 	col := LVCOLUMNW{Mask: LVCF_WIDTH | LVCF_TEXT, Cx: scale96(725, dpi), PszText: utf16Ptr("File / stream")}
 	procSendMessageW.Call(mergerWindow.list, LVM_INSERTCOLUMNW, 0, uintptr(unsafe.Pointer(&col)))
 	add("BUTTON", "Clear streams", BS_PUSHBUTTON, 28, 365, 130, 28, mergerFirstID+3)
 	mergerWindow.chapter = add("EDIT", "", WS_BORDER|ES_AUTOHSCROLL, 28, 405, 430, 28, 0)
-	add("BUTTON", "CHOOSE CHAPTER FILE FROM MKV or RAW", BS_PUSHBUTTON, 468, 403, 310, 32, mergerFirstID+4)
+	add("BUTTON", "ADD CHAPTER .txt FILE(FFMETADATA1 Format)", BS_PUSHBUTTON, 468, 403, 310, 32, mergerFirstID+4)
 	mergerWindow.output = add("EDIT", loadSettings().OutputDir, WS_BORDER|ES_AUTOHSCROLL, 28, 445, 500, 28, 0)
 	if getText(mergerWindow.output) == "" {
 		setText(mergerWindow.output, defaultOutputDir())
@@ -184,6 +185,19 @@ func browseMergerFiles(owner uintptr, multiple bool) []string {
 	return paths
 }
 
+func browseWindowsMergerMediaSources(owner uintptr) []string {
+	choice := messageBox(owner, "Add media", "Choose what to add.\n\nYes: media file(s) or DVD ISO\nNo: DVD / VIDEO_TS folder\nCancel: return", 0x00000003|MB_ICONQUESTION)
+	switch choice {
+	case 6:
+		return browseMergerFiles(owner, true)
+	case 7:
+		if path := browseFolder(owner, "Choose DVD / VIDEO_TS folder"); path != "" {
+			return []string{path}
+		}
+	}
+	return nil
+}
+
 func runWindowsMerger(label string, work func(context.Context) (func(), error)) {
 	if !app.busy.CompareAndSwap(false, true) {
 		return
@@ -243,7 +257,12 @@ func handleWindowsMergerCommand(id int) bool {
 	switch id - mergerFirstID {
 	case 0, 1, 2:
 		kind := []string{"all", "audio", "subtitle"}[id-mergerFirstID]
-		paths := browseMergerFiles(app.hwnd, true)
+		var paths []string
+		if kind == "all" {
+			paths = browseWindowsMergerMediaSources(app.hwnd)
+		} else {
+			paths = browseMergerFiles(app.hwnd, true)
+		}
 		if len(paths) == 0 {
 			return true
 		}
