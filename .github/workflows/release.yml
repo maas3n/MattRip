@@ -640,3 +640,34 @@ jobs:
             args+=(--prerelease)
           fi
           gh "${args[@]}"
+
+      - name: Refresh rolling main download aliases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version='${{ needs.metadata.outputs.version }}'
+          rolling_tag='main-downloads'
+
+          cp "release-assets/MattRip-$version-Windows-All-in-One.exe" \
+            release-assets/MattRip-Windows-All-in-One.exe
+          cp "release-assets/MattRip-$version-Linux-amd64Standalone" \
+            release-assets/MattRip-Linux-amd64Standalone
+          cp "release-assets/MattRip-$version-Android.apk" \
+            release-assets/MattRip-Android.apk
+
+          if ! gh release view "$rolling_tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$rolling_tag" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$(git rev-parse HEAD)" \
+              --title "MattRip main downloads" \
+              --notes "Rolling download aliases for the most recently published MattRip GitHub release. Use numbered releases for immutable archives." \
+              --prerelease
+          fi
+
+          gh release upload "$rolling_tag" \
+            release-assets/MattRip-Windows-All-in-One.exe \
+            release-assets/MattRip-Linux-amd64Standalone \
+            release-assets/MattRip-Android.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber

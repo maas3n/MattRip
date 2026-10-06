@@ -13,6 +13,50 @@ MattRip 1.5.0 is the first public MattRip release. It starts from the verified M
 Release downloads and checksums are published together on the [MattRip 1.5.0 release page](https://github.com/maas3n/MattRip/releases/tag/v1.5.0).
 
 
+## Download the current GitHub builds
+
+These links stay the same when a new MattRip release is published. The release workflow refreshes the rolling **main downloads** with artifacts built from the newly published release, so the README does not need version-specific download URLs.
+
+### Windows All-in-One
+
+[**Download MattRip for Windows — All-in-One**](https://github.com/maas3n/MattRip/releases/download/main-downloads/MattRip-Windows-All-in-One.exe)
+
+### Linux Standalone
+
+[**Download MattRip for Linux — Standalone**](https://github.com/maas3n/MattRip/releases/download/main-downloads/MattRip-Linux-amd64Standalone)
+
+`curl`:
+
+```bash
+curl -L --fail -o MattRip-Linux-amd64Standalone https://github.com/maas3n/MattRip/releases/download/main-downloads/MattRip-Linux-amd64Standalone
+chmod +x MattRip-Linux-amd64Standalone
+```
+
+`wget`:
+
+```bash
+wget -O MattRip-Linux-amd64Standalone https://github.com/maas3n/MattRip/releases/download/main-downloads/MattRip-Linux-amd64Standalone
+chmod +x MattRip-Linux-amd64Standalone
+```
+
+### Android / ChromeOS APK
+
+[**Download MattRip for Android / ChromeOS**](https://github.com/maas3n/MattRip/releases/download/main-downloads/MattRip-Android.apk)
+
+`curl`:
+
+```bash
+curl -L --fail -o MattRip-Android.apk https://github.com/maas3n/MattRip/releases/download/main-downloads/MattRip-Android.apk
+```
+
+`wget`:
+
+```bash
+wget -O MattRip-Android.apk https://github.com/maas3n/MattRip/releases/download/main-downloads/MattRip-Android.apk
+```
+
+> The rolling links follow the most recently **published GitHub release** (including prereleases). Numbered release assets remain immutable.
+
 ## What MattRip can do
 
 ### REMUX/DEMUX
