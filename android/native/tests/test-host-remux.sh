@@ -6,13 +6,20 @@ TEST_WORK="${2:?Pass output diagnostic directory}"
 mkdir -p "$TEST_WORK"
 TEST_WORK="$(cd "$TEST_WORK" && pwd)"
 JDK="${JAVA_HOME:-/usr/lib/jvm/java-17-openjdk-amd64}"
+css_flags=()
+css_libs=()
+if [[ -n "${CSS_LIBDVDCSS_PREFIX:-}" ]]; then
+  css_flags=(-DMATTMUX_DVDCSS=1 "-I$CSS_LIBDVDCSS_PREFIX/include")
+  css_libs=("-L$CSS_LIBDVDCSS_PREFIX/lib" "-Wl,-rpath,$CSS_LIBDVDCSS_PREFIX/lib" -ldvdcss)
+fi
 cc -shared -fPIC -std=c11 -D_POSIX_C_SOURCE=200809L -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 \
+  "${css_flags[@]}" \
   -Wall -Wextra -Werror=implicit-function-declaration \
   -I"${UDF_SOURCE}/src" -I"${ROOT}/android/native" -I"${JDK}/include" -I"${JDK}/include/linux" \
   "${UDF_SOURCE}/src/udfread.c" "${UDF_SOURCE}/src/ecma167.c" "${UDF_SOURCE}/src/default_blockinput.c" \
   "${ROOT}/android/native/mattmux_jni.c" "${ROOT}/android/native/udf_source.c" \
   "${ROOT}/android/native/tests/host_fd.c" \
-  -lavformat -lavcodec -lavutil -o "${TEST_WORK}/libmattmux_host_test.so"
+  -lavformat -lavcodec -lavutil "${css_libs[@]}" -o "${TEST_WORK}/libmattmux_host_test.so"
 ffmpeg -v error -f lavfi -i 'testsrc2=size=720x576:rate=25' \
   -f lavfi -i 'sine=frequency=440:sample_rate=48000' -t 2 -target pal-dvd \
   -y "${TEST_WORK}/input.vob"

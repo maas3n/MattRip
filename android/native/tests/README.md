@@ -27,6 +27,18 @@ Android DVD title discovery and title/cell/chapter planning are provided by the 
 
 ## Remaining equivalence gates
 
+`test-dvdcss-stream.sh <host-libdvdcss-prefix> <diagnostic-directory>` tests the
+production byte-based stream adapter against pinned libdvdcss 1.6.0 with ASan
+and UBSan. Synthetic data covers nonzero and >4 GiB seeks, byte counts, partial
+reads, EOF, invalid arguments and the library's public block-to-byte conversion.
+It requires no encrypted or copyrighted media. The CSS runtime workflow runs it.
+
+Android CI also reruns `test-host-remux.sh` with `CSS_LIBDVDCSS_PREFIX` set to a
+host libdvdcss installation. This compiles `MATTMUX_DVDCSS=1` into the production
+JNI and checks folder/ISO and sparse-timestamp parity through the CSS-aware
+sector reader. The ordinary CSS-free run remains separate. These tests do not
+establish successful decryption of real encrypted media; that manual gate remains.
+
 These tests do not establish Linux/Windows release equivalence. Before claiming
 that, add independently authored DVD-Video/UDF 1.02 fixtures and golden plans for
 multiple titles, shared PGCs, fragmented files, multiple languages/subtitles and

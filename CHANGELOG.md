@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Correct Android libdvdcss stream callbacks to use byte offsets/counts and zero-on-success seeking; add sanitizer contract tests and CSS-enabled native remux parity coverage.
 - Add pinned libdvdcss 1.6.0 build/provenance and private Windows/Linux release runtimes for CSS-protected DVD access through the existing FFmpeg dvdvideo + libdvdread path.
 - Keep Linux libdvdcss search paths scoped to MattRip child media tools and add cross-platform CI that builds the pinned runtime independently of Android production signing.
 - Add optional Android libdvdcss sector decryption to the existing SAF/UDF native reader for direct GitHub/development builds; preserve the existing title/cell/chapter and libav stream-copy paths.

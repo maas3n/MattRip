@@ -86,6 +86,10 @@ jobs:
           python3 -m pip install pycdlib==1.14.0
           bash android/native/tests/test-udf-source.sh "$PWD/android/native/.work/libudfread"
           bash android/native/tests/test-host-remux.sh "$PWD/android/native/.work/libudfread" "$RUNNER_TEMP/remux-parity"
+          LIBDVDCSS_PREFIX="$RUNNER_TEMP/host-libdvdcss" \
+            LIBDVDCSS_WORK="$RUNNER_TEMP/host-libdvdcss-work" bash scripts/build-libdvdcss.sh
+          CSS_LIBDVDCSS_PREFIX="$RUNNER_TEMP/host-libdvdcss" \
+            bash android/native/tests/test-host-remux.sh "$PWD/android/native/.work/libudfread" "$RUNNER_TEMP/remux-parity-css"
           bash android/native/tests/test-title-selection.sh "$PWD/android/native/.work" "$RUNNER_TEMP/title-selection"
 
       - name: Upload remux parity diagnostics

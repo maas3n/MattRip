@@ -10,6 +10,10 @@ on:
       - 'src/dvd_css_linux.go'
       - 'src/dvd_css_linux_test.go'
       - 'src/linux_core.go'
+      - 'android/native/dvdcss_stream.h'
+      - 'android/native/mattmux_jni.c'
+      - 'android/native/tests/dvdcss_stream_test.c'
+      - 'android/native/tests/test-dvdcss-stream.sh'
   workflow_dispatch:
 
 permissions:
@@ -33,6 +37,8 @@ jobs:
           test -s "$prefix/share/mattrip/libdvdcss/libdvdcss-1.6.0-source.tar.xz"
           readlink -f "$prefix/lib/libdvdcss.so.2"
           sha256sum "$prefix/share/mattrip/libdvdcss/libdvdcss-1.6.0-source.tar.xz"
+      - name: Test Android stream callbacks against host libdvdcss with sanitizers
+        run: bash android/native/tests/test-dvdcss-stream.sh "$RUNNER_TEMP/libdvdcss" "$RUNNER_TEMP/css-callbacks"
 
   windows-libdvdcss:
     runs-on: windows-latest
