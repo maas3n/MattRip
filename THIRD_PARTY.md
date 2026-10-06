@@ -56,7 +56,7 @@ Self-contained Windows and Linux packages build and bundle a private libdvdcss r
 - License: GPL-2.0-or-later
 - Integration: private shared library loaded by libdvdread; MattRip does not replace the existing FFmpeg `dvdvideo` title/remux/demux path
 
-The release packages retain the exact libdvdcss source archive, COPYING file, and build metadata. Linux keeps the library in MattRip's private runtime search path; Windows keeps `libdvdcss-2.dll` beside the private FFmpeg tools. Android/ChromeOS does not bundle libdvdcss yet because its current remux path reads selected VOB/UDF data directly rather than through libdvdread's sector I/O.
+The release packages retain the exact libdvdcss source archive, COPYING file, and build metadata. Linux keeps the library in MattRip's private runtime search path; Windows keeps `libdvdcss-2.dll` beside the private FFmpeg tools. Direct GitHub/development Android builds use the same pinned libdvdcss source, statically linked into the JNI bridge, and decrypt scrambled sectors through libdvdcss stream callbacks before the existing SAF/UDF native reader passes them to libav. The Google Play AAB workflow deliberately builds with `MATTRIP_ANDROID_CSS=0` pending a separate Play distribution-policy review.
 
 ## Inherited MattMux Android / ChromeOS Alpha 4 provenance
 
@@ -68,9 +68,10 @@ The Android/ChromeOS app uses native FFmpeg libraries, libudfread, and the DVD t
 - libdvdnav version: `6.1.1` (GPL; statically linked into the JNI bridge)
 - libdvdread version: `6.1.3` (GPL; statically linked into the JNI bridge)
 - Current target ABIs: `arm64-v8a`, `x86_64`
-- CSS decryption/circumvention: not included
+- Direct GitHub/development CSS path: libdvdcss 1.6.0, statically linked into `libmattmux_jni.so`
+- Google Play CSS path: disabled with `MATTRIP_ANDROID_CSS=0` pending separate policy review
 
-Android releases must include source/provenance and license material for all four native dependencies.
+Direct CSS-capable Android releases include the exact libdvdcss source/provenance and license material alongside the other native dependency sources.
 
 ## Licensing
 
