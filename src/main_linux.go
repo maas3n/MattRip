@@ -34,7 +34,7 @@ type linuxGUI struct {
 	preserve                                                                   *widget.Check
 	progress                                                                   *widget.ProgressBar
 	status, trackSummary                                                       *widget.Label
-	scanBtn, metaBtn, remuxBtn, demuxBtn, cancelBtn, dvdBtn, isoBtn, driveBtn, outputBtn *widget.Button
+	scanBtn, remuxBtn, demuxBtn, cancelBtn, dvdBtn, isoBtn, driveBtn, outputBtn *widget.Button
 	mu                                                                         sync.Mutex
 	busy                                                                       bool
 	cancel                                                                     context.CancelFunc
@@ -84,7 +84,7 @@ func (g *linuxGUI) build() {
 	g.outputEntry = widget.NewEntry()
 	g.outputEntry.SetText(s.OutputDir)
 	g.titleSelect = widget.NewSelect(nil, func(string) { g.clearTrackSelection() })
-	g.titleSelect.PlaceHolder = "Scan titles first"
+	g.titleSelect.PlaceHolder = "Scan/select streams first"
 	g.trackSummary = widget.NewLabel("Tracks: all streams (default)")
 	g.trackSummary.Wrapping = fyne.TextWrapWord
 	g.preserve = widget.NewCheck("Include chapters in remux / demux", func(bool) { g.saveSettings() })
@@ -96,10 +96,9 @@ func (g *linuxGUI) build() {
 	g.isoBtn = widget.NewButton("ISO / MKV File…", g.chooseISO)
 	g.driveBtn = widget.NewButton("DVD Drive…", g.chooseDVDDrive)
 	g.outputBtn = widget.NewButton("Browse…", g.chooseOutput)
-	g.scanBtn = widget.NewButton("Scan Titles", func() { g.startAsync("Scanning DVD titles…", g.scan) })
-	g.metaBtn = widget.NewButton("Show Metadata", func() { g.startAsync("Reading title metadata…", g.showMetadata) })
-	g.remuxBtn = widget.NewButton("Start Remux", func() { g.startAsync("Preparing remux…", g.remux) })
-	g.demuxBtn = widget.NewButton("Demux", g.chooseDemux)
+	g.scanBtn = widget.NewButton("SCAN/SELECT STREAMS", func() { g.startAsync("Scanning source and loading selectable streams…", g.scanSelectStreams) })
+	g.remuxBtn = widget.NewButton("REMUX", func() { g.startAsync("Preparing remux…", g.remux) })
+	g.demuxBtn = widget.NewButton("DEMUX", g.chooseDemux)
 	g.remuxBtn.Importance = widget.HighImportance
 	g.cancelBtn = widget.NewButton("Cancel", g.cancelCurrent)
 	g.cancelBtn.Disable()
@@ -109,11 +108,11 @@ func (g *linuxGUI) build() {
 	header := container.NewVBox(widget.NewLabelWithStyle("MattRip", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), widget.NewLabel("Lossless DVD title remuxing to Matroska — video, audio, subtitles, chapters and metadata."))
 	sourceRow := container.NewBorder(nil, nil, nil, container.NewHBox(g.dvdBtn, g.isoBtn, g.driveBtn), g.sourceEntry)
 	outputRow := container.NewBorder(nil, nil, nil, g.outputBtn, g.outputEntry)
-	titleRow := container.NewBorder(nil, nil, nil, container.NewHBox(g.scanBtn, g.metaBtn, aboutBtn), g.titleSelect)
+	titleRow := container.NewBorder(nil, nil, nil, container.NewHBox(g.scanBtn, aboutBtn), g.titleSelect)
 	timestampNotice := widget.NewLabel("Remux uses fixed timestamps (-fflags +genpts).")
 	timestampNotice.Wrapping = fyne.TextWrapWord
 	actions := container.NewHBox(layout.NewSpacer(), g.remuxBtn, g.demuxBtn, g.cancelBtn)
-	dvdTab := container.NewPadded(container.NewVBox(header, widget.NewSeparator(), widget.NewLabelWithStyle("Source", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), sourceRow, widget.NewLabel("Choose a DVD folder / VIDEO_TS structure, ISO image, MKV file, or physical DVD drive."), widget.NewSeparator(), widget.NewLabelWithStyle("Destination", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), outputRow, widget.NewSeparator(), widget.NewLabelWithStyle("DVD Title", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), titleRow, g.trackSummary, g.preserve, widget.NewSeparator(), g.progress, g.status, layout.NewSpacer(), timestampNotice, actions))
+	dvdTab := container.NewPadded(container.NewVBox(header, widget.NewSeparator(), widget.NewLabelWithStyle("Source", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), sourceRow, widget.NewLabel("MEDIA: DRIVE / VIDEO_TS / ISO / MKV — choose a DVD folder / VIDEO_TS structure, ISO image, MKV file, or physical DVD drive."), widget.NewSeparator(), widget.NewLabelWithStyle("Destination", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), outputRow, widget.NewSeparator(), widget.NewLabelWithStyle("DVD Title", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), titleRow, g.trackSummary, g.preserve, widget.NewSeparator(), g.progress, g.status, layout.NewSpacer(), timestampNotice, actions))
 	g.window.SetContent(container.NewAppTabs(container.NewTabItem("REMUX/DEMUX", dvdTab), container.NewTabItem("ADVANCED", g.buildAdvancedMerger()), container.NewTabItem("BATCH", g.buildBatch()), container.NewTabItem("CLI", g.buildCLI())))
 }
 
@@ -229,7 +228,7 @@ func (g *linuxGUI) setBusy(b bool) {
 	controls := []interface {
 		Disable()
 		Enable()
-	}{g.sourceEntry, g.outputEntry, g.titleSelect, g.preserve, g.scanBtn, g.metaBtn, g.remuxBtn, g.demuxBtn, g.dvdBtn, g.isoBtn, g.driveBtn, g.outputBtn}
+	}{g.sourceEntry, g.outputEntry, g.titleSelect, g.preserve, g.scanBtn, g.remuxBtn, g.demuxBtn, g.dvdBtn, g.isoBtn, g.driveBtn, g.outputBtn}
 	for _, c := range controls {
 		if b {
 			c.Disable()
@@ -312,25 +311,47 @@ func (g *linuxGUI) selectedTitle() (string, titleInfo, error) {
 	}
 	n := parseTitleLabel(g.titleSelect.Selected)
 	if n < 1 {
-		return "", titleInfo{}, errors.New("scan the DVD and choose a title first")
+		return "", titleInfo{}, errors.New("click SCAN/SELECT STREAMS and choose a title first")
 	}
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	if filepath.Clean(src) != filepath.Clean(g.titlesSource) {
-		return "", titleInfo{}, errors.New("source changed after the last title scan; scan again")
+		return "", titleInfo{}, errors.New("source changed; click SCAN/SELECT STREAMS again")
 	}
 	for _, t := range g.titles {
 		if t.Number == n {
 			return src, t, nil
 		}
 	}
-	return "", titleInfo{}, errors.New("selected title is no longer available; scan again")
+	return "", titleInfo{}, errors.New("selected title is no longer available; click SCAN/SELECT STREAMS again")
 }
+func (g *linuxGUI) scanSelectStreams(ctx context.Context) error {
+	if src, title, err := g.selectedTitle(); err == nil {
+		return g.showMetadataFor(ctx, src, title)
+	}
+	if err := g.scan(ctx); err != nil {
+		return err
+	}
+	g.mu.Lock()
+	titles := append([]titleInfo(nil), g.titles...)
+	src := g.titlesSource
+	g.mu.Unlock()
+	best, err := longestTitle(titles)
+	if err != nil {
+		return err
+	}
+	return g.showMetadataFor(ctx, src, best)
+}
+
 func (g *linuxGUI) showMetadata(ctx context.Context) error {
 	src, title, err := g.selectedTitle()
 	if err != nil {
 		return err
 	}
+	return g.showMetadataFor(ctx, src, title)
+}
+
+func (g *linuxGUI) showMetadataFor(ctx context.Context, src string, title titleInfo) error {
 	tools, err := ensureTools(ctx, true, g.progressCallback())
 	if err != nil {
 		return err
