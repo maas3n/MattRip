@@ -26,8 +26,11 @@ func TestAdvancedMergerAndBatchTabs(t *testing.T) {
 	if len(tabs.Items) != 4 {
 		t.Fatalf("tabs = %d; want 4", len(tabs.Items))
 	}
-	if tabs.Items[1].Text != "Advanced Merger" {
-		t.Fatal("missing Advanced Merger tab")
+	if tabs.Items[0].Text != "REMUX/DEMUX" {
+		t.Fatal("missing REMUX/DEMUX tab")
+	}
+	if tabs.Items[1].Text != "ADVANCED" {
+		t.Fatal("missing ADVANCED tab")
 	}
 	if tabs.Items[2].Text != "BATCH" {
 		t.Fatal("missing BATCH tab")
