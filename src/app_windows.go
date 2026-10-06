@@ -115,7 +115,6 @@ const (
 	idOutputBtn        = 1005
 	idTitleCombo       = 1006
 	idScanBtn          = 1007
-	idMetaBtn          = 1008
 	idRemuxBtn         = 1009
 	idDemuxBtn         = 1013
 	idCancelBtn        = 1010
@@ -226,7 +225,6 @@ type application struct {
 	outputButton     uintptr
 	titleCombo       uintptr
 	scanBtn          uintptr
-	metaBtn          uintptr
 	preserveChapters uintptr
 	remuxBtn         uintptr
 	demuxBtn         uintptr
