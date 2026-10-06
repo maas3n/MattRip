@@ -148,7 +148,7 @@ func (g *linuxGUI) buildAdvancedMerger() fyne.CanvasObject {
 		refresh()
 		scroll := container.NewVScroll(files)
 		scroll.SetMinSize(fyne.NewSize(600, 320))
-		var chooser *dialog.CustomDialog
+		var chooser *dialog.ConfirmDialog
 		actions := container.NewHBox(widget.NewButton("Open folder", refresh))
 		if kind == "all" {
 			actions.Add(widget.NewButton("Add current folder as DVD / VIDEO_TS", func() {
