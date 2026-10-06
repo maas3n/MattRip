@@ -1,0 +1,260 @@
+name: Android Alpha Release
+
+on:
+  push:
+    branches:
+      - 'release/android-v1.6.0-alpha.1'
+    paths:
+      - '.github/workflows/android-alpha-v1.6.0-alpha.1.yml'
+
+permissions:
+  contents: read
+
+env:
+  FFMPEG_VERSION: '9.0.1'
+  ANDROID_NDK_VERSION: '30.0.16248370'
+  MATTRIP_ALPHA_VERSION: '1.6.0-alpha.1'
+  MATTRIP_ALPHA_TAG: 'v1.6.0-alpha.1'
+  MATTRIP_ALPHA_VERSION_CODE: '10600001'
+  MATTRIP_TARGET_SHA: 'ba7883bd67c01a5804b6ced7d84892d85e4b0627'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: android-release
+    steps:
+      - name: Check out release source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.MATTRIP_TARGET_SHA }}
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+
+      - name: Install Android platform and native toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake meson ninja-build binutils curl patchelf xz-utils autoconf automake libtool pkg-config ffmpeg dvdauthor genisoimage libavformat-dev libavcodec-dev libavutil-dev
+          sdkmanager \
+            'platforms;android-36' \
+            'build-tools;36.0.0' \
+            "ndk;${ANDROID_NDK_VERSION}"
+
+      - name: Set up Gradle 9.6
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.6.0'
+
+      - name: Require Android app-signing secrets and certificate pin
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_APP_SIGNING_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_APP_SIGNING_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_APP_SIGNING_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_APP_SIGNING_KEY_PASSWORD }}
+          CERT_SHA256: ${{ vars.ANDROID_APP_SIGNING_CERT_SHA256 }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_B64" || { echo 'Missing ANDROID_APP_SIGNING_KEYSTORE_BASE64' >&2; exit 1; }
+          test -n "$STORE_PASSWORD" || { echo 'Missing ANDROID_APP_SIGNING_STORE_PASSWORD' >&2; exit 1; }
+          test -n "$KEY_ALIAS" || { echo 'Missing ANDROID_APP_SIGNING_KEY_ALIAS' >&2; exit 1; }
+          test -n "$KEY_PASSWORD" || { echo 'Missing ANDROID_APP_SIGNING_KEY_PASSWORD' >&2; exit 1; }
+          test -n "$CERT_SHA256" || { echo 'Missing ANDROID_APP_SIGNING_CERT_SHA256' >&2; exit 1; }
+
+      - name: Prepare and verify Android app-signing identity
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_APP_SIGNING_KEYSTORE_BASE64 }}
+          MATTRIP_SIGNING_KEYSTORE: ${{ runner.temp }}/mattrip-app-signing.jks
+          MATTRIP_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_APP_SIGNING_STORE_PASSWORD }}
+          MATTRIP_SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_APP_SIGNING_KEY_ALIAS }}
+          MATTRIP_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_APP_SIGNING_KEY_PASSWORD }}
+          MATTRIP_EXPECTED_CERT_SHA256: ${{ vars.ANDROID_APP_SIGNING_CERT_SHA256 }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$MATTRIP_SIGNING_KEYSTORE"
+          bash scripts/android-signing-preflight.sh "MattRip app-signing key"
+
+      - name: Build bundled CSS-capable FFmpeg runtime
+        run: |
+          ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}" \
+            bash android/native/build-ffmpeg-android.sh
+
+      - name: Run libdvdcss callback sanitizer regression
+        run: |
+          set -euo pipefail
+          LIBDVDCSS_PREFIX="$RUNNER_TEMP/host-libdvdcss" \
+            LIBDVDCSS_WORK="$RUNNER_TEMP/host-libdvdcss-work" \
+            bash scripts/build-libdvdcss.sh
+          bash android/native/tests/test-dvdcss-stream.sh \
+            "$RUNNER_TEMP/host-libdvdcss" \
+            "$RUNNER_TEMP/css-callbacks"
+
+      - name: Test UDF and CSS-enabled production JNI parity
+        run: |
+          set -euo pipefail
+          python3 -m pip install pycdlib==1.14.0
+          bash android/native/tests/test-udf-source.sh "$PWD/android/native/.work/libudfread"
+          bash android/native/tests/test-host-remux.sh \
+            "$PWD/android/native/.work/libudfread" \
+            "$RUNNER_TEMP/remux-parity"
+          CSS_LIBDVDCSS_PREFIX="$RUNNER_TEMP/host-libdvdcss" \
+            bash android/native/tests/test-host-remux.sh \
+              "$PWD/android/native/.work/libudfread" \
+              "$RUNNER_TEMP/remux-parity-css"
+          bash android/native/tests/test-title-selection.sh \
+            "$PWD/android/native/.work" \
+            "$RUNNER_TEMP/title-selection"
+
+      - name: Test, lint and build signed Alpha APK
+        env:
+          ORG_GRADLE_PROJECT_MATTRIP_SIGNING_STORE_FILE: ${{ runner.temp }}/mattrip-app-signing.jks
+          ORG_GRADLE_PROJECT_MATTRIP_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_APP_SIGNING_STORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_MATTRIP_SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_APP_SIGNING_KEY_ALIAS }}
+          ORG_GRADLE_PROJECT_MATTRIP_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_APP_SIGNING_KEY_PASSWORD }}
+        run: |
+          gradle -p android \
+            -PMATTRIP_VERSION_NAME="${MATTRIP_ALPHA_VERSION}" \
+            -PMATTRIP_VERSION_CODE="${MATTRIP_ALPHA_VERSION_CODE}" \
+            -PMATTRIP_REQUIRE_SIGNING=true \
+            :app:testDebugUnitTest :app:lintRelease :app:assembleRelease
+
+      - name: Verify Alpha APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$(find android/app/build/outputs/apk/release -name '*.apk' -print -quit)"
+          test -n "$APK"
+          BADGING="$("${ANDROID_HOME}/build-tools/36.0.0/aapt" dump badging "$APK")"
+          grep -Fq "versionCode='${MATTRIP_ALPHA_VERSION_CODE}'" <<<"$BADGING"
+          grep -Fq "versionName='${MATTRIP_ALPHA_VERSION}'" <<<"$BADGING"
+          python3 android/native/verify-package.py "$APK"
+          build_info="$(unzip -p "$APK" assets/ffmpeg/ffmpeg-build-info.txt)"
+          grep -q 'FFmpeg version: 9.0.1' <<<"$build_info"
+          grep -q 'CSS support: libdvdcss 1.6.0' <<<"$build_info"
+          "${ANDROID_HOME}/build-tools/36.0.0/zipalign" -c -P 16 -v 4 "$APK"
+          "${ANDROID_HOME}/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK" | tee /tmp/mattrip-apksigner.txt
+          ! grep -Fq "CN=Android Debug" /tmp/mattrip-apksigner.txt
+          bash scripts/verify-android-signing-cert.sh \
+            "$APK" \
+            '${{ vars.ANDROID_APP_SIGNING_CERT_SHA256 }}' \
+            "${ANDROID_HOME}/build-tools/36.0.0/apksigner"
+
+      - name: Prepare Android Alpha release payload
+        run: |
+          set -euo pipefail
+          mkdir -p dist/android-alpha
+          APK="$(find android/app/build/outputs/apk/release -name '*.apk' -print -quit)"
+          cp "$APK" "dist/android-alpha/MattRip-${MATTRIP_ALPHA_VERSION}-Android.apk"
+          cp "android/native/.work/ffmpeg-${FFMPEG_VERSION}.tar.xz" "dist/android-alpha/FFmpeg-${FFMPEG_VERSION}-source.tar.xz"
+          cp android/native/.work/libudfread-1.1.2-source.tar.gz dist/android-alpha/
+          cp android/native/.work/MediaInfoLib-source.tar.gz android/native/.work/ZenLib-source.tar.gz dist/android-alpha/
+          cp android/app/src/main/assets/ffmpeg/*-License.* dist/android-alpha/
+          cp android/app/src/main/assets/ffmpeg/NDK-NOTICE.txt dist/android-alpha/
+          cp android/app/src/main/assets/ffmpeg/LIBUDFREAD_COPYING.txt dist/android-alpha/
+          cp android/app/src/main/assets/ffmpeg/ffmpeg-build-info.txt dist/android-alpha/FFmpeg-build-info.txt
+          cp android/app/src/main/assets/ffmpeg/COPYING.LGPLv2.1 dist/android-alpha/COPYING.LGPLv2.1.txt
+          cp android/app/src/main/assets/ffmpeg/FFMPEG_LICENSE.md dist/android-alpha/
+          cp THIRD_PARTY.md "dist/android-alpha/MattRip-${MATTRIP_ALPHA_VERSION}-THIRD-PARTY.md"
+          (
+            cd dist/android-alpha
+            sha256sum ./* > SHA256SUMS-Android.txt
+          )
+
+      - name: Upload Android Alpha payload
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-android-alpha
+          if-no-files-found: error
+          path: dist/android-alpha/*
+
+  startup:
+    needs: build
+    uses: ./.github/workflows/android-startup.yml
+    with:
+      artifact: release-android-alpha
+      source-ref: ba7883bd67c01a5804b6ced7d84892d85e4b0627
+
+  publish:
+    needs: [build, startup]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out release source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ env.MATTRIP_TARGET_SHA }}
+
+      - name: Download Android Alpha payload
+        uses: actions/download-artifact@v4
+        with:
+          name: release-android-alpha
+          path: release-assets
+
+      - name: Verify payload checksums
+        run: |
+          set -euo pipefail
+          (cd release-assets && sha256sum -c SHA256SUMS-Android.txt)
+          test -s "release-assets/MattRip-${MATTRIP_ALPHA_VERSION}-Android.apk"
+
+      - name: Refuse to overwrite an existing tag or release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "${MATTRIP_ALPHA_TAG}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release ${MATTRIP_ALPHA_TAG} already exists." >&2
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/${MATTRIP_ALPHA_TAG}" >/dev/null 2>&1; then
+            echo "Tag ${MATTRIP_ALPHA_TAG} already exists." >&2
+            exit 1
+          fi
+
+      - name: Write Alpha release notes
+        run: |
+          cat > "$RUNNER_TEMP/release-notes.md" <<'NOTES'
+          ## Android Alpha test build
+
+          This is a **pre-release build for testing**, not a stable release and not a Google Play release.
+
+          Highlights:
+          - CSS/libdvdcss support is enabled for the direct GitHub Android build.
+          - Uses the production MattRip Android app-signing identity.
+          - Includes arm64-v8a and x86_64 native runtimes.
+          - Android 8.0 / API 26 or newer.
+          - The callback memory-safety regression, CSS-enabled native remux parity, package/signature checks, and emulator startup tests must pass before publication.
+
+          Testing focus:
+          - DVD folders and ISO images through Android SAF/UDF.
+          - CSS-encrypted DVD content, especially remux/demux correctness and seeking.
+          - Progress reporting, cancellation, stream selection, chapters, and output integrity.
+
+          Known scope:
+          - Android USB optical-drive transport is not included yet.
+          - Google Play distribution remains separate and CSS-free pending its own policy/release work.
+          - Real encrypted-media coverage still depends on tester feedback with representative discs/images.
+
+          Please report reproducible problems with device model, Android version, input type (VIDEO_TS/ISO), and relevant logs.
+          NOTES
+
+      - name: Publish Android Alpha GitHub pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create "${MATTRIP_ALPHA_TAG}" \
+            release-assets/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "${MATTRIP_TARGET_SHA}" \
+            --title "MattRip ${MATTRIP_ALPHA_VERSION} — Android Alpha" \
+            --notes-file "$RUNNER_TEMP/release-notes.md" \
+            --prerelease
