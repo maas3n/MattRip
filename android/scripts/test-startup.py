@@ -36,7 +36,7 @@ try:
     time.sleep(3)
     if not adb("shell", "pidof", package).strip():
         raise RuntimeError("MattRip exited after launch")
-    for label in ("DVD Remux", "Advanced Merger", "BATCH", "CLI"):
+    for label in ("REMUX/DEMUX", "ADVANCED", "BATCH", "CLI"):
         tree = screen("before-" + label.replace(" ", "-"))
         node = next((n for n in tree.iter("node") if n.get("text", "").casefold() == label.casefold()), None)
         if node is None:
