@@ -21,6 +21,23 @@ func TestWindowsAdvancedMergerAndBatchTabs(t *testing.T) {
 	if mergerWindow.tab == 0 || mergerWindow.list == 0 || mergerWindow.progress == 0 || mergerWindow.demuxBtn == 0 {
 		t.Fatal("missing merger controls")
 	}
+	if len(mergerWindow.controls) < 9 {
+		t.Fatal("missing Advanced Merger controls")
+	}
+	wantSourceLabels := []string{
+		"MEDIA(All streams included)",
+		"DVD DRIVE",
+		"ADD AUDIO(Only audio streams will be included)",
+		"ADD SUBTITLE(Only subtitle streams will be Included)",
+	}
+	for i, want := range wantSourceLabels {
+		if got := getText(mergerWindow.controls[i]); got != want {
+			t.Fatalf("source button %d = %q; want %q", i, got, want)
+		}
+	}
+	if got, want := getText(mergerWindow.controls[8]), "ADD CHAPTER .txt FILE(FFMETADATA1 Format)"; got != want {
+		t.Fatalf("chapter button = %q; want %q", got, want)
+	}
 	visible := syscall.NewLazyDLL("user32.dll").NewProc("IsWindowVisible")
 
 	if len(mergerWindow.dvd) == 0 || len(mergerWindow.controls) == 0 || len(batchWindow.controls) == 0 {
