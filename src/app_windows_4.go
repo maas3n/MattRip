@@ -150,19 +150,19 @@ func currentSource() (string, error) { return normalizeTabSource(getText(app.sou
 func selectedTitle() (titleInfo, error) {
 	idx, _, _ := procSendMessageW.Call(app.titleCombo, CB_GETCURSEL, 0, 0)
 	if int32(idx) < 0 {
-		return titleInfo{}, errors.New("scan the DVD titles and choose a title first")
+		return titleInfo{}, errors.New("click SCAN/SELECT STREAMS and choose a title first")
 	}
-	current, err := normalizeSource(getText(app.sourceEdit))
+	current, err := normalizeTabSource(getText(app.sourceEdit))
 	if err != nil {
 		return titleInfo{}, err
 	}
 	app.titlesMu.RLock()
 	defer app.titlesMu.RUnlock()
 	if !strings.EqualFold(filepath.Clean(current), filepath.Clean(app.titlesSource)) {
-		return titleInfo{}, errors.New("the source changed after the last title scan; scan titles again")
+		return titleInfo{}, errors.New("the source changed; click SCAN/SELECT STREAMS again")
 	}
 	if int(idx) >= len(app.titles) {
-		return titleInfo{}, errors.New("scan the DVD titles again")
+		return titleInfo{}, errors.New("click SCAN/SELECT STREAMS again")
 	}
 	return app.titles[int(idx)], nil
 }
