@@ -21,6 +21,18 @@ func TestWindowsAdvancedMergerAndBatchTabs(t *testing.T) {
 	if mergerWindow.tab == 0 || mergerWindow.list == 0 || mergerWindow.progress == 0 || mergerWindow.demuxBtn == 0 {
 		t.Fatal("missing merger controls")
 	}
+	if got, want := getText(app.scanBtn), "SCAN/SELECT STREAMS"; got != want {
+		t.Fatalf("scan/select button = %q; want %q", got, want)
+	}
+	if got, want := getText(app.remuxBtn), "REMUX"; got != want {
+		t.Fatalf("remux button = %q; want %q", got, want)
+	}
+	if got, want := getText(app.demuxBtn), "DEMUX"; got != want {
+		t.Fatalf("demux button = %q; want %q", got, want)
+	}
+	if got, want := getText(batchWindow.oneClick), "BATCH REMUX"; got != want {
+		t.Fatalf("batch button = %q; want %q", got, want)
+	}
 	if len(mergerWindow.controls) < 9 {
 		t.Fatal("missing Advanced Merger controls")
 	}
@@ -37,6 +49,15 @@ func TestWindowsAdvancedMergerAndBatchTabs(t *testing.T) {
 	}
 	if got, want := getText(mergerWindow.controls[8]), "ADD CHAPTER .txt FILE(FFMETADATA1 Format)"; got != want {
 		t.Fatalf("chapter button = %q; want %q", got, want)
+	}
+	foundMux := false
+	for _, control := range mergerWindow.controls {
+		if getText(control) == "MUX" {
+			foundMux = true
+		}
+	}
+	if !foundMux {
+		t.Fatal("Advanced Merger is missing renamed MUX button")
 	}
 	visible := syscall.NewLazyDLL("user32.dll").NewProc("IsWindowVisible")
 
