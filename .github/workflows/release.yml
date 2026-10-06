@@ -220,8 +220,19 @@ jobs:
           Copy-Item .\src\MattRip.exe.manifest (Join-Path $stage 'MattRip-Portable.exe.manifest') -Force
           Copy-Item .\src\MattRip.ico (Join-Path $stage 'MattRip.ico') -Force
           Copy-Item .\THIRD_PARTY.md (Join-Path $stage 'THIRD_PARTY.md') -Force
-          Copy-Item .\packaging\installer\bundled-tools\ffmpeg-2026-09-08\* $ffDest -Force
+          Copy-Item .\packaging\installer\bundled-tools\ffmpeg-2026-09-08\* $ffDest -Recurse -Force
           Copy-Item .\packaging\installer\bundled-tools\mediainfo-26.05\MediaInfo.exe $miDest -Force
+
+          foreach ($required in @(
+            (Join-Path $ffDest 'libdvdcss-2.dll'),
+            (Join-Path $ffDest 'licenses\libdvdcss\COPYING'),
+            (Join-Path $ffDest 'licenses\libdvdcss\BUILD-INFO.txt'),
+            (Join-Path $ffDest 'licenses\libdvdcss\libdvdcss-1.6.0-source.tar.xz')
+          )) {
+            if (-not (Test-Path -LiteralPath $required)) {
+              throw "Portable CSS runtime provenance is missing: $required"
+            }
+          }
 
           @(
             "MattRip $version Portable",
