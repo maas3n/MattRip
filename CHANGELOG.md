@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Update Advanced Merger source labels for clearer stream-selection behavior and let MEDIA add DVD VIDEO_TS folders and DVD ISO images alongside ordinary media on Windows, Linux, Android and ChromeOS.
+- Rename the main media tabs to **REMUX/DEMUX** and **ADVANCED**, update Advanced Merger source labels for clearer stream-selection behavior, and let MEDIA add DVD VIDEO_TS folders and DVD ISO images alongside ordinary media on Windows, Linux, Android and ChromeOS.
 
 - Correct Android libdvdcss stream callbacks to use byte offsets/counts and zero-on-success seeking; add sanitizer contract tests and CSS-enabled native remux parity coverage.
 - Add pinned libdvdcss 1.6.0 build/provenance and private Windows/Linux release runtimes for CSS-protected DVD access through the existing FFmpeg dvdvideo + libdvdread path.
