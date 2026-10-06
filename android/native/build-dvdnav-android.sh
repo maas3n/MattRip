@@ -113,7 +113,8 @@ EOF
             PKG_CONFIG_PATH="$prefix/lib/pkgconfig" \
               CSS_CFLAGS="-I$prefix/include" CSS_LIBS="-L$prefix/lib -ldvdcss" \
               CC="$cc" AR="$AR" RANLIB="$RANLIB" STRIP="$STRIP" \
-              CFLAGS='-O2 -fPIC' LDFLAGS='-Wl,-z,max-page-size=16384' \
+              CPPFLAGS="-I$prefix/include" CFLAGS='-O2 -fPIC' \
+              LDFLAGS="-L$prefix/lib -Wl,-z,max-page-size=16384" \
               "$READ_SRC/configure" --host="$target" --prefix="$prefix" \
               --enable-static --disable-shared --with-libdvdcss
         else
