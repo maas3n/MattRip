@@ -167,10 +167,18 @@ class AdvancedMergerPanel(private val activity: Activity) {
         return copyInput(uri, name)
     }
 
-    private fun displayName(uri: Uri): String =
-        activity.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
+    private fun displayName(uri: Uri): String {
+        val queryUri = if (DocumentsContract.isTreeUri(uri)) {
+            runCatching {
+                DocumentsContract.buildDocumentUriUsingTree(uri, DocumentsContract.getTreeDocumentId(uri))
+            }.getOrDefault(uri)
+        } else {
+            uri
+        }
+        return activity.contentResolver.query(queryUri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
             if (it.moveToFirst()) it.getString(0) else null
         } ?: "input-${sources.size}"
+    }
 
     private fun copyInput(uri: Uri, providedName: String? = null): File {
         val name = providedName ?: displayName(uri)
