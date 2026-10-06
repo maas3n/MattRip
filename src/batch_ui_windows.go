@@ -35,8 +35,8 @@ func createBatchWindowsControls(hwnd, hInstance uintptr) {
 	batchWindow.output = add("EDIT", "", WS_BORDER|ES_AUTOHSCROLL, 28, 308, 500, 30, 0)
 	add("BUTTON", "CHOOSE OUTPUT FOLDER", BS_PUSHBUTTON, 538, 306, 240, 34, batchFirstID+1)
 	add("STATIC", "Leave blank to place each completed MKV beside its ISO or VIDEO_TS folder.", 0, 28, 345, 750, 24, 0)
-	batchWindow.status = add("STATIC", "Choose the movie collection folder, then click ONECLICK BATCH.", 0, 28, 405, 750, 62, 0)
-	batchWindow.oneClick = add("BUTTON", "ONECLICK BATCH", BS_PUSHBUTTON, 392, 530, 276, 42, batchFirstID+2)
+	batchWindow.status = add("STATIC", "Choose the movie collection folder, then click BATCH REMUX.", 0, 28, 405, 750, 62, 0)
+	batchWindow.oneClick = add("BUTTON", "BATCH REMUX", BS_PUSHBUTTON, 392, 530, 276, 42, batchFirstID+2)
 	batchWindow.cancel = add("BUTTON", "Cancel", BS_PUSHBUTTON, 680, 530, 98, 42, batchFirstID+3)
 	procEnableWindow.Call(batchWindow.cancel, 0)
 	for _, c := range batchWindow.controls {
