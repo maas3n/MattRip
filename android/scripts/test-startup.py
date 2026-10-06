@@ -10,7 +10,7 @@ import xml.etree.ElementTree as ET
 apk = Path(sys.argv[1]).resolve()
 logs = Path(sys.argv[2])
 logs.mkdir(parents=True, exist_ok=True)
-package = "io.github.maas3n.mattrip"
+package = "io.github.maas3n.mattrip.alpha"
 
 
 def adb(*args):
