@@ -87,7 +87,7 @@ func createMergerWindowsControls(hwnd, hInstance uintptr) {
 	// show the native marquee while an operation is active instead of a fake value.
 	mergerWindow.progress, _, _ = procCreateWindowExW.Call(0, uintptr(unsafe.Pointer(utf16Ptr("msctls_progress32"))), 0, uintptr(WS_CHILD|mergerPBSMarquee), uintptr(scale96(28, dpi)), uintptr(scale96(550, dpi)), uintptr(scale96(750, dpi)), uintptr(scale96(16, dpi)), hwnd, 0, hInstance, 0)
 	mergerWindow.demuxBtn = add("BUTTON", "DEMUX", BS_PUSHBUTTON, 296, 574, 180, 34, mergerFirstID+7)
-	add("BUTTON", "MUX TO MKV", BS_PUSHBUTTON, 488, 574, 180, 34, mergerFirstID+6)
+	add("BUTTON", "MUX", BS_PUSHBUTTON, 488, 574, 180, 34, mergerFirstID+6)
 	mergerWindow.cancelBtn = add("BUTTON", "Cancel", BS_PUSHBUTTON, 680, 574, 98, 34, mergerFirstID+8)
 	procEnableWindow.Call(mergerWindow.cancelBtn, 0)
 	createBatchWindowsControls(hwnd, hInstance)
