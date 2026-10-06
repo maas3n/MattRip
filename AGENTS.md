@@ -16,9 +16,11 @@
   CSS-specific title scanner or remux engine. Preserve the exact libdvdcss source,
   checksum, license, and build provenance in self-contained release packages.
 - Do not mark Android CSS as supported merely because libdvdcss can be linked to
-  the DVDNav scanner. Android remux/demux currently reads VOB/UDF payload sectors
-  directly; CSS support is complete only when those payload reads use a verified
-  decrypted-sector path and the native regressions cover it.
+  the DVDNav scanner. Android remux/demux reads VOB/UDF payload sectors directly;
+  CSS-capable builds must decrypt that payload path, verify the statically linked
+  libdvdcss symbols/notices in CI, and keep the existing unencrypted native parity
+  regressions green. Real encrypted folder/ISO validation remains a pre-release
+  manual gate; Android USB optical-drive transport is a separate feature.
 - BATCH accepts DVD folders and unmounted ISOs. Blank output means an MKV beside
   the ISO or beside VIDEO_TS in the movie folder, never inside VIDEO_TS. An
   explicit output directory overrides this. Never overwrite existing outputs;
