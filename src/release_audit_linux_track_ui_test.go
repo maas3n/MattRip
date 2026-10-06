@@ -20,7 +20,7 @@ func TestLinuxReleaseKeepsModalTrackSelector(t *testing.T) {
 	}
 	src := string(b)
 	for _, required := range []string{
-		`widget.NewButton("Show Metadata"`,
+		`widget.NewButton("SCAN/SELECT STREAMS"`,
 		`dialog.NewCustomWithoutButtons(`,
 		`g.window`,
 		`Close & use selection`,
