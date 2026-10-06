@@ -16,12 +16,12 @@ env:
   MATTRIP_ALPHA_VERSION: '1.6.0-alpha.1'
   MATTRIP_ALPHA_TAG: 'v1.6.0-alpha.1'
   MATTRIP_ALPHA_VERSION_CODE: '10600001'
+  MATTRIP_ALPHA_PACKAGE: 'io.github.maas3n.mattrip.alpha'
   MATTRIP_TARGET_SHA: 'ba7883bd67c01a5804b6ced7d84892d85e4b0627'
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: android-release
     steps:
       - name: Check out release source
         uses: actions/checkout@v4
@@ -53,33 +53,28 @@ jobs:
         with:
           gradle-version: '9.6.0'
 
-      - name: Require Android app-signing secrets and certificate pin
-        env:
-          KEYSTORE_B64: ${{ secrets.ANDROID_APP_SIGNING_KEYSTORE_BASE64 }}
-          STORE_PASSWORD: ${{ secrets.ANDROID_APP_SIGNING_STORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_APP_SIGNING_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_APP_SIGNING_KEY_PASSWORD }}
-          CERT_SHA256: ${{ vars.ANDROID_APP_SIGNING_CERT_SHA256 }}
+      - name: Configure isolated Alpha application identity
         run: |
           set -euo pipefail
-          test -n "$KEYSTORE_B64" || { echo 'Missing ANDROID_APP_SIGNING_KEYSTORE_BASE64' >&2; exit 1; }
-          test -n "$STORE_PASSWORD" || { echo 'Missing ANDROID_APP_SIGNING_STORE_PASSWORD' >&2; exit 1; }
-          test -n "$KEY_ALIAS" || { echo 'Missing ANDROID_APP_SIGNING_KEY_ALIAS' >&2; exit 1; }
-          test -n "$KEY_PASSWORD" || { echo 'Missing ANDROID_APP_SIGNING_KEY_PASSWORD' >&2; exit 1; }
-          test -n "$CERT_SHA256" || { echo 'Missing ANDROID_APP_SIGNING_CERT_SHA256' >&2; exit 1; }
+          python3 - <<'PY'
+          from pathlib import Path
 
-      - name: Prepare and verify Android app-signing identity
-        env:
-          KEYSTORE_B64: ${{ secrets.ANDROID_APP_SIGNING_KEYSTORE_BASE64 }}
-          MATTRIP_SIGNING_KEYSTORE: ${{ runner.temp }}/mattrip-app-signing.jks
-          MATTRIP_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_APP_SIGNING_STORE_PASSWORD }}
-          MATTRIP_SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_APP_SIGNING_KEY_ALIAS }}
-          MATTRIP_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_APP_SIGNING_KEY_PASSWORD }}
-          MATTRIP_EXPECTED_CERT_SHA256: ${{ vars.ANDROID_APP_SIGNING_CERT_SHA256 }}
-        run: |
-          set -euo pipefail
-          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$MATTRIP_SIGNING_KEYSTORE"
-          bash scripts/android-signing-preflight.sh "MattRip app-signing key"
+          gradle = Path("android/app/build.gradle.kts")
+          text = gradle.read_text()
+          old = 'applicationId = "io.github.maas3n.mattrip"'
+          new = 'applicationId = "io.github.maas3n.mattrip.alpha"'
+          if old not in text:
+              raise SystemExit("Expected production applicationId declaration not found")
+          gradle.write_text(text.replace(old, new, 1))
+
+          strings = Path("android/app/src/main/res/values/strings.xml")
+          text = strings.read_text()
+          old = '<string name="app_name">MattRip</string>'
+          new = '<string name="app_name">MattRip Alpha</string>'
+          if old not in text:
+              raise SystemExit("Expected app_name declaration not found")
+          strings.write_text(text.replace(old, new, 1))
+          PY
 
       - name: Build bundled CSS-capable FFmpeg runtime
         run: |
@@ -112,46 +107,72 @@ jobs:
             "$PWD/android/native/.work" \
             "$RUNNER_TEMP/title-selection"
 
-      - name: Test, lint and build signed Alpha APK
-        env:
-          ORG_GRADLE_PROJECT_MATTRIP_SIGNING_STORE_FILE: ${{ runner.temp }}/mattrip-app-signing.jks
-          ORG_GRADLE_PROJECT_MATTRIP_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_APP_SIGNING_STORE_PASSWORD }}
-          ORG_GRADLE_PROJECT_MATTRIP_SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_APP_SIGNING_KEY_ALIAS }}
-          ORG_GRADLE_PROJECT_MATTRIP_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_APP_SIGNING_KEY_PASSWORD }}
+      - name: Test, lint and build unsigned Alpha APK
         run: |
           gradle -p android \
             -PMATTRIP_VERSION_NAME="${MATTRIP_ALPHA_VERSION}" \
             -PMATTRIP_VERSION_CODE="${MATTRIP_ALPHA_VERSION_CODE}" \
-            -PMATTRIP_REQUIRE_SIGNING=true \
+            -PMATTRIP_REQUIRE_SIGNING=false \
             :app:testDebugUnitTest :app:lintRelease :app:assembleRelease
+
+      - name: Test-sign isolated Alpha APK
+        run: |
+          set -euo pipefail
+          mkdir -p dist/android-alpha
+          UNSIGNED="$(find android/app/build/outputs/apk/release -name '*.apk' -print -quit)"
+          test -n "$UNSIGNED"
+          ALIGNED="$RUNNER_TEMP/mattrip-alpha-aligned.apk"
+          KEYSTORE="$RUNNER_TEMP/mattrip-alpha-test.jks"
+          PASSWORD='mattrip-alpha-test-only'
+
+          keytool -genkeypair \
+            -keystore "$KEYSTORE" \
+            -storepass "$PASSWORD" \
+            -keypass "$PASSWORD" \
+            -alias mattrip-alpha \
+            -keyalg RSA \
+            -keysize 3072 \
+            -validity 3650 \
+            -dname 'CN=MattRip Android Alpha Test,O=MattRip Test Builds,C=NO' \
+            -noprompt
+
+          "${ANDROID_HOME}/build-tools/36.0.0/zipalign" \
+            -f -P 16 -v 4 "$UNSIGNED" "$ALIGNED"
+
+          "${ANDROID_HOME}/build-tools/36.0.0/apksigner" sign \
+            --ks "$KEYSTORE" \
+            --ks-key-alias mattrip-alpha \
+            --ks-pass "pass:$PASSWORD" \
+            --key-pass "pass:$PASSWORD" \
+            --out "dist/android-alpha/MattRip-${MATTRIP_ALPHA_VERSION}-Android.apk" \
+            "$ALIGNED"
 
       - name: Verify Alpha APK
         shell: bash
         run: |
           set -euo pipefail
-          APK="$(find android/app/build/outputs/apk/release -name '*.apk' -print -quit)"
-          test -n "$APK"
+          APK="dist/android-alpha/MattRip-${MATTRIP_ALPHA_VERSION}-Android.apk"
+          test -s "$APK"
+
           BADGING="$("${ANDROID_HOME}/build-tools/36.0.0/aapt" dump badging "$APK")"
+          grep -Fq "package: name='${MATTRIP_ALPHA_PACKAGE}'" <<<"$BADGING"
           grep -Fq "versionCode='${MATTRIP_ALPHA_VERSION_CODE}'" <<<"$BADGING"
           grep -Fq "versionName='${MATTRIP_ALPHA_VERSION}'" <<<"$BADGING"
+          grep -Fq "application-label:'MattRip Alpha'" <<<"$BADGING"
+
           python3 android/native/verify-package.py "$APK"
           build_info="$(unzip -p "$APK" assets/ffmpeg/ffmpeg-build-info.txt)"
           grep -q 'FFmpeg version: 9.0.1' <<<"$build_info"
           grep -q 'CSS support: libdvdcss 1.6.0' <<<"$build_info"
+
           "${ANDROID_HOME}/build-tools/36.0.0/zipalign" -c -P 16 -v 4 "$APK"
-          "${ANDROID_HOME}/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK" | tee /tmp/mattrip-apksigner.txt
-          ! grep -Fq "CN=Android Debug" /tmp/mattrip-apksigner.txt
-          bash scripts/verify-android-signing-cert.sh \
-            "$APK" \
-            '${{ vars.ANDROID_APP_SIGNING_CERT_SHA256 }}' \
-            "${ANDROID_HOME}/build-tools/36.0.0/apksigner"
+          "${ANDROID_HOME}/build-tools/36.0.0/apksigner" verify \
+            --verbose --print-certs "$APK" | tee dist/android-alpha/Alpha-signing-certificate.txt
+          grep -Fq 'CN=MattRip Android Alpha Test' dist/android-alpha/Alpha-signing-certificate.txt
 
       - name: Prepare Android Alpha release payload
         run: |
           set -euo pipefail
-          mkdir -p dist/android-alpha
-          APK="$(find android/app/build/outputs/apk/release -name '*.apk' -print -quit)"
-          cp "$APK" "dist/android-alpha/MattRip-${MATTRIP_ALPHA_VERSION}-Android.apk"
           cp "android/native/.work/ffmpeg-${FFMPEG_VERSION}.tar.xz" "dist/android-alpha/FFmpeg-${FFMPEG_VERSION}-source.tar.xz"
           cp android/native/.work/libudfread-1.1.2-source.tar.gz dist/android-alpha/
           cp android/native/.work/MediaInfoLib-source.tar.gz android/native/.work/ZenLib-source.tar.gz dist/android-alpha/
@@ -179,7 +200,7 @@ jobs:
     uses: ./.github/workflows/android-startup.yml
     with:
       artifact: release-android-alpha
-      source-ref: ba7883bd67c01a5804b6ced7d84892d85e4b0627
+      source-ref: release/android-v1.6.0-alpha.1
 
   publish:
     needs: [build, startup]
@@ -224,14 +245,19 @@ jobs:
           cat > "$RUNNER_TEMP/release-notes.md" <<'NOTES'
           ## Android Alpha test build
 
-          This is a **pre-release build for testing**, not a stable release and not a Google Play release.
+          This is a **public pre-release for testing**, not a stable release and not a Google Play release.
+
+          Installation:
+          - The Alpha uses the separate package ID `io.github.maas3n.mattrip.alpha` and appears as **MattRip Alpha**.
+          - It can be installed alongside stable MattRip without replacing it.
+          - This Alpha is signed with a one-off test certificate because the production Android signing keys are intentionally being configured later.
+          - Future Alpha builds may require uninstall/reinstall until a persistent Alpha or production signing identity is configured.
 
           Highlights:
-          - CSS/libdvdcss support is enabled for the direct GitHub Android build.
-          - Uses the production MattRip Android app-signing identity.
+          - CSS/libdvdcss support is enabled for this direct GitHub Android build.
           - Includes arm64-v8a and x86_64 native runtimes.
           - Android 8.0 / API 26 or newer.
-          - The callback memory-safety regression, CSS-enabled native remux parity, package/signature checks, and emulator startup tests must pass before publication.
+          - The libdvdcss callback memory-safety regression, CSS-enabled native remux parity, APK/package validation, and emulator startup tests must pass before publication.
 
           Testing focus:
           - DVD folders and ISO images through Android SAF/UDF.
