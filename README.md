@@ -15,9 +15,9 @@ Release downloads and checksums are published together on the [MattRip 1.5.0 rel
 
 ## What MattRip can do
 
-### DVD Remux
+### REMUX/DEMUX
 
-The main **DVD Remux** tab accepts:
+The main **REMUX/DEMUX** tab accepts:
 
 - DVD folders and `VIDEO_TS`
 - unmounted DVD ISO images
@@ -32,7 +32,7 @@ Windows and Linux use FFmpeg's `dvdvideo` input backed by `libdvdread`/`libdvdna
 
 ### Demux
 
-The **Demux** action in the DVD Remux tab extracts selected streams without re-encoding. It works with DVD folders, DVD ISOs, and MKV sources on all supported platforms, plus physical DVD drives on Windows/Linux.
+The **Demux** action in the **REMUX/DEMUX** tab extracts selected streams without re-encoding. It works with DVD folders, DVD ISOs, and MKV sources on all supported platforms, plus physical DVD drives on Windows/Linux.
 
 Depending on the selected streams, MattRip can export:
 
@@ -51,9 +51,9 @@ Each demux operation creates a new output folder. DVD folders and ISOs are read 
 
 Android/ChromeOS temporarily holds exported files while saving them through the Storage Access Framework; MKV inputs also require an app-private input copy. Direct DVD demux keeps stream selection, chapters, subtitle metadata, cancellation, extraction progress, and the DVD clock-reset/discontinuity handling used by the native reader.
 
-### Advanced Merger
+### ADVANCED
 
-The **Advanced Merger** combines selected streams from multiple sources into one MKV without transcoding.
+The **ADVANCED** tab combines selected streams from multiple sources into one MKV without transcoding.
 
 Inputs include normal containers such as MKV, MP4 and AVI, DVD ISOs, **physical DVD drives on Windows/Linux**, and supported elementary streams such as H.264, MPEG-2/VOB, AAC, AC-3, MP3, DTS, SRT, WebVTT and SUP.
 
@@ -65,7 +65,7 @@ Inputs include normal containers such as MKV, MP4 and AVI, DVD ISOs, **physical 
 
 Streams are explicitly selectable. Embedded chapter titles are preserved, and a dedicated chapter source overrides selected embedded chapters.
 
-Advanced Merger also has a **DEMUX** action. Tick or untick the rows you want, then demux only the selected video, audio, and subtitle streams; a checked embedded chapter row exports `Chapters.txt`. Multiple inputs can be demuxed in one operation, with source-prefixed output names to avoid collisions. MPEG-2 video can be exported either as elementary `.mpeg2` or as video-only `.VOB`, matching the main Demux workflow.
+The **ADVANCED** tab also has a **DEMUX** action. Tick or untick the rows you want, then demux only the selected video, audio, and subtitle streams; a checked embedded chapter row exports `Chapters.txt`. Multiple inputs can be demuxed in one operation, with source-prefixed output names to avoid collisions. MPEG-2 video can be exported either as elementary `.mpeg2` or as video-only `.VOB`, matching the main Demux workflow.
 
 DVD ISO and physical-drive input use the longest readable DVD title and keep that title through stream selection and muxing. Windows/Linux Advanced Merger DEMUX reads DVD selections directly through `dvdvideo`. Android/ChromeOS maps the selected staged merger rows back to the original DVD stream indexes and performs DEMUX directly from the original DVD source rather than from the temporary MKV used for the MUX workflow. Android/ChromeOS stages Storage Access Framework documents as needed; paired VobSub input requires both the matching `.idx` and `.sub` files.
 
@@ -141,7 +141,7 @@ Subtitles
 
 All tracks start selected. At least one media stream must remain selected for remuxing or demuxing. Chapter preservation/extraction is controlled separately.
 
-Changing the source or DVD title clears the previous selection so stream indexes cannot accidentally carry over to another title. MKV metadata in the DVD Remux tab is displayed using MediaInfo.
+Changing the source or DVD title clears the previous selection so stream indexes cannot accidentally carry over to another title. MKV metadata in the **REMUX/DEMUX** tab is displayed using MediaInfo.
 
 ## Platform support
 
@@ -236,7 +236,7 @@ See [`RELEASING.md`](RELEASING.md) for the full release policy.
 
 ## Recent development
 
-The current feature set grew substantially after the early 1.4.x releases. Notable additions and fixes include cross-platform Advanced Merger expansion, Advanced Merger selected-stream DEMUX with MPEG-2/VOB choice, one-click BATCH, shared Windows/Linux DVD CLI commands, Android BATCH and in-app CLI support, DVD ISO handling, native Android libdvdnav title selection, MKV input in the DVD Remux tab, direct DVD demux without a temporary MKV, DVD clock-reset/progress handling, DVD subtitle extraction, and stronger Windows/Linux/Android parity coverage.
+The current feature set grew substantially after the early 1.4.x releases. Notable additions and fixes include cross-platform Advanced Merger expansion, Advanced Merger selected-stream DEMUX with MPEG-2/VOB choice, one-click BATCH, shared Windows/Linux DVD CLI commands, Android BATCH and in-app CLI support, DVD ISO handling, native Android libdvdnav title selection, MKV input in the REMUX/DEMUX tab, direct DVD demux without a temporary MKV, DVD clock-reset/progress handling, DVD subtitle extraction, and stronger Windows/Linux/Android parity coverage.
 
 MattRip inherited this feature set from MattMux 1.4.19. For the pre-fork version history, see [MattMux Releases](https://github.com/maas3n/MattMux/releases).
 
