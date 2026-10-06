@@ -72,8 +72,8 @@ class MainActivity : Activity(), BillingManager.Listener {
         applySystemBarInsets(layout, 0, 0, 0, 0)
         // Material themes may not supply the legacy TabHost indicator layout.
         // Providing our own views avoids attempting to inflate resource ID 0.
-        host.addTab(host.newTabSpec("dvd").setIndicator(tabIndicator("DVD Remux")).setContent { dvd })
-        host.addTab(host.newTabSpec("merger").setIndicator(tabIndicator("Advanced Merger")).setContent { advancedMerger.view })
+        host.addTab(host.newTabSpec("dvd").setIndicator(tabIndicator("REMUX/DEMUX")).setContent { dvd })
+        host.addTab(host.newTabSpec("merger").setIndicator(tabIndicator("ADVANCED")).setContent { advancedMerger.view })
         host.addTab(host.newTabSpec("batch").setIndicator(tabIndicator("BATCH")).setContent { batchPanel.view })
         host.addTab(host.newTabSpec("cli").setIndicator(tabIndicator("CLI")).setContent { cliPanel.view })
         setContentView(host)
