@@ -310,7 +310,7 @@ func (g *linuxGUI) buildAdvancedMerger() fyne.CanvasObject {
 			})
 		}, g.window).Show()
 	})
-	mux := widget.NewButton("MUX TO MKV", func() {
+	mux := widget.NewButton("MUX", func() {
 		var chosen []mergerStream
 		for i, s := range streams {
 			if checks[i].Checked {
