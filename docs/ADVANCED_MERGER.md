@@ -2,17 +2,17 @@
 
 Advanced Merger combines selected video, audio, subtitle, attachment/data, and optional chapter data into a new Matroska (`.mkv`) file without transcoding.
 
-The feature is available from the **Advanced Merger** tab. It is separate from the DVD-title remux workflow.
+The feature is available from the **ADVANCED** tab. It is separate from the **REMUX/DEMUX** workflow.
 
 ## Inputs
 
-- **MOVIE FILES** accepts FFmpeg-supported containers and elementary media files. Every probed stream in these inputs is added to **Select Streams**: video, audio, subtitle, attachment/data/other streams, plus one selectable embedded chapter-set row when the source contains chapters.
+- **MEDIA(All streams included)** accepts FFmpeg-supported containers and elementary media files plus DVD VIDEO_TS folders and DVD ISO images. Every probed stream in the selected source is added to **Select Streams**: video, audio, subtitle, attachment/data/other streams, plus one selectable embedded chapter-set row when the source contains chapters. DVD folder/ISO inputs select the longest readable DVD title through the shared DVD source engine.
 - **DVD DRIVE** (Windows/Linux) discovers a physical optical drive through the desktop DVDSource layer, scans it with FFmpeg `dvdvideo`/libdvdread/libdvdnav, chooses the longest readable title, and exposes that title's streams and chapters.
-- **AUDIO / MKV / RAW** accepts containers and elementary audio files understood by FFmpeg. Only audio streams are added to **Select Streams**.
-- **SUBTITLE / MKV / RAW** accepts containers and subtitle files understood by FFmpeg. Only subtitle streams are added to **Select Streams**.
-- **CHOOSE CHAPTER FILE FROM MKV or RAW** accepts one chapter override source. The source may be a valid `FFMETADATA1` file or an MKV containing valid chapters.
+- **ADD AUDIO(Only audio streams will be included)** accepts containers and elementary audio files understood by FFmpeg. Only audio streams are added to **Select Streams**.
+- **ADD SUBTITLE(Only subtitle streams will be Included)** accepts containers and subtitle files understood by FFmpeg. Only subtitle streams are added to **Select Streams**.
+- **ADD CHAPTER .txt FILE(FFMETADATA1 Format)** accepts one chapter override source. A valid `FFMETADATA1` text file is the primary format shown by the UI; existing MKV chapter-override input remains accepted for compatibility.
 
-Movie inputs intentionally differ from the filtered Audio and Subtitle buttons. For example, adding an MKV through **MOVIE FILES** can expose its video, audio, subtitle, attachment/data streams and embedded chapter set at the same time. Adding that same MKV through **AUDIO / MKV / RAW** exposes only its audio tracks.
+MEDIA intentionally differs from the filtered Audio and Subtitle buttons. For example, adding an MKV through **MEDIA(All streams included)** can expose its video, audio, subtitle, attachment/data streams and embedded chapter set at the same time. Adding that same MKV through **ADD AUDIO(Only audio streams will be included)** exposes only its audio tracks. On Windows, MEDIA asks whether to open media files/DVD ISO or a DVD/VIDEO_TS folder. On Linux, the MEDIA browser can add the currently browsed DVD/VIDEO_TS folder directly. On Android/ChromeOS, MEDIA offers the file picker for media/DVD ISO or the SAF tree picker for a DVD/VIDEO_TS folder.
 
 Raw/elementary inputs are supported when the bundled FFmpeg runtime can demux them, including common H.264, MPEG-2/VOB, AAC, AC-3, MP3, DTS, SRT, WebVTT, SUP and similar formats.
 
@@ -24,13 +24,13 @@ Every discovered stream or chapter set is initially selected. Clear any checkbox
 
 Embedded chapters are represented as chapter-set checkboxes because chapters are container metadata rather than packet streams. When no dedicated chapter override is chosen, select at most one movie chapter set. If more than one movie chapter set is selected, MattRip asks you to choose only one.
 
-A chapter source chosen with **CHOOSE CHAPTER FILE FROM MKV or RAW** overrides selected embedded movie chapters. The dedicated picker intentionally accepts MKV or `FFMETADATA1`; movie inputs themselves may carry embedded chapters in other FFmpeg-supported containers such as MP4.
+A chapter source chosen with **ADD CHAPTER .txt FILE(FFMETADATA1 Format)** overrides selected embedded movie chapters. The dedicated picker intentionally accepts MKV or `FFMETADATA1`; movie inputs themselves may carry embedded chapters in other FFmpeg-supported containers such as MP4.
 
 At least one non-chapter stream must remain selected before muxing.
 
 ## Output and metadata behavior
 
-Choose the output folder, enter an `.mkv` filename, and press **MUX TO MKV**.
+Choose the output folder, enter an `.mkv` filename, and press **MUX**.
 
 MattRip maps the exact selected input stream indexes and uses stream copy (`-c copy` on desktop, equivalent native libav packet copying on Android/ChromeOS). It does not intentionally re-encode video or audio. On Windows and Linux, each DVD input (VIDEO_TS, ISO, or physical drive) is opened with `-analyzeduration 100M -probesize 100M -fflags +genpts`. In mixed jobs those 100M probe overrides are scoped only to DVD inputs. Ordinary MKV/MP4/raw inputs keep their existing media-input handling instead of inheriting the DVD-specific 100M probe limits.
 

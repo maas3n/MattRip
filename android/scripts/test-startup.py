@@ -36,8 +36,9 @@ try:
     time.sleep(3)
     if not adb("shell", "pidof", package).strip():
         raise RuntimeError("MattRip exited after launch")
-    for label in ("DVD Remux", "Advanced Merger", "BATCH", "CLI"):
-        tree = screen("before-" + label.replace(" ", "-"))
+    for label in ("REMUX/DEMUX", "ADVANCED", "BATCH", "CLI"):
+        safe_label = re.sub(r"[^A-Za-z0-9._-]+", "-", label).strip("-")
+        tree = screen("before-" + safe_label)
         node = next((n for n in tree.iter("node") if n.get("text", "").casefold() == label.casefold()), None)
         if node is None:
             raise RuntimeError(f"Missing tab after launch: {label}")

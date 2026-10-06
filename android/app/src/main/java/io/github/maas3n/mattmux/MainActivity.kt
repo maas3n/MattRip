@@ -72,8 +72,8 @@ class MainActivity : Activity(), BillingManager.Listener {
         applySystemBarInsets(layout, 0, 0, 0, 0)
         // Material themes may not supply the legacy TabHost indicator layout.
         // Providing our own views avoids attempting to inflate resource ID 0.
-        host.addTab(host.newTabSpec("dvd").setIndicator(tabIndicator("DVD Remux")).setContent { dvd })
-        host.addTab(host.newTabSpec("merger").setIndicator(tabIndicator("Advanced Merger")).setContent { advancedMerger.view })
+        host.addTab(host.newTabSpec("dvd").setIndicator(tabIndicator("REMUX/DEMUX")).setContent { dvd })
+        host.addTab(host.newTabSpec("merger").setIndicator(tabIndicator("ADVANCED")).setContent { advancedMerger.view })
         host.addTab(host.newTabSpec("batch").setIndicator(tabIndicator("BATCH")).setContent { batchPanel.view })
         host.addTab(host.newTabSpec("cli").setIndicator(tabIndicator("CLI")).setContent { cliPanel.view })
         setContentView(host)
@@ -203,7 +203,7 @@ class MainActivity : Activity(), BillingManager.Listener {
             setTypeface(typeface, Typeface.BOLD)
         })
         root.addView(TextView(this).apply {
-            text = "DVD / VIDEO_TS / ISO / MKV → Remux or Demux"
+            text = "MEDIA: VIDEO_TS / ISO / MKV"
             textSize = 16f
             setPadding(0, dp(4), 0, dp(22))
         })
@@ -234,15 +234,15 @@ class MainActivity : Activity(), BillingManager.Listener {
             "Bundled native runtime: $it\n\nVIDEO_TS folders and UDF ISO images use the same DVD title/cell planner. Select an unencrypted DVD; ISO files must be on storage that supports seeking. Interleaved multi-angle discs are not supported in this alpha."
         } ?: "The bundled native FFmpeg runtime could not be loaded in this build."
         root.addView(value(runtimeMessage))
-        tracksButton = button("Scan / Show Metadata") { showTrackMetadata() }
+        tracksButton = button("SCAN/SELECT STREAMS") { showTrackMetadata() }
         root.addView(tracksButton)
         remuxStatus = value("Ready")
         root.addView(remuxStatus)
         includeChapters = android.widget.CheckBox(this).apply { text = "Include chapters"; isChecked = true }
         root.addView(includeChapters)
         root.addView(value("DVD demux reads the title directly. Exported files need temporary space while saving; MKV inputs also need an input copy."))
-        remuxButton = button("Start Remux") { startRemux() }
-        demuxButton = button("Demux") { chooseDemux() }
+        remuxButton = button("REMUX") { startRemux() }
+        demuxButton = button("DEMUX") { chooseDemux() }
         root.addView(LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             addView(remuxButton, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
@@ -402,7 +402,7 @@ class MainActivity : Activity(), BillingManager.Listener {
 
     private fun clearTrackSelection() {
         selectedTrackIndexes = null
-        if (::remuxStatus.isInitialized) remuxStatus.text = "Source changed. Show Metadata to choose tracks, or remux all tracks by default."
+        if (::remuxStatus.isInitialized) remuxStatus.text = "Source changed. Use SCAN/SELECT STREAMS to choose tracks, or remux all tracks by default."
         if (::tracksButton.isInitialized) updateRemuxButton()
     }
 
@@ -441,7 +441,7 @@ class MainActivity : Activity(), BillingManager.Listener {
             !engine.isAvailable -> "Remux engine unavailable"
             selectedTrackIndexes != null && selectedTrackIndexes!!.isEmpty() -> "Select at least one track"
             BuildConfig.ENABLE_BILLING_PURCHASES && !proOwned -> "Unlock Pro to remux"
-            else -> "Start Remux"
+            else -> "REMUX"
         }
     }
 

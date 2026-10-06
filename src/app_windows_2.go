@@ -31,7 +31,7 @@ func setSource(p string) {
 	setText(app.sourceEdit, normalized)
 	app.invalidateTitles()
 	setProgress(0)
-	setStatus("Source selected. Scan titles to identify the main feature.")
+	setStatus("Source selected. Click SCAN/SELECT STREAMS to scan the source and choose streams.")
 }
 func droppedPath(hDrop uintptr) string {
 	defer procDragFinish.Call(hDrop)
@@ -99,7 +99,6 @@ func setBusyUI(busy bool) {
 		enabled = 0
 	}
 	procEnableWindow.Call(app.scanBtn, enabled)
-	procEnableWindow.Call(app.metaBtn, enabled)
 	procEnableWindow.Call(app.remuxBtn, enabled)
 	procEnableWindow.Call(app.demuxBtn, enabled)
 	procEnableWindow.Call(app.sourceEdit, enabled)
@@ -111,6 +110,19 @@ func setBusyUI(busy bool) {
 	procEnableWindow.Call(app.titleCombo, enabled)
 	procEnableWindow.Call(app.preserveChapters, enabled)
 	procEnableWindow.Call(app.cancelBtn, 1-enabled)
+}
+
+func scanSelectStreams(ctx context.Context) error {
+	// If this source/title has already been scanned (for example after the user
+	// changes the title dropdown), reuse that selection and reopen the stream
+	// chooser. Otherwise scan first, choose the longest title, then immediately
+	// open its stream/metadata selection.
+	if _, err := selectedTitle(); err != nil {
+		if err := discoverDVDTitlesViaDVDVideo(ctx); err != nil {
+			return err
+		}
+	}
+	return showMetadata(ctx)
 }
 
 func discoverDVDTitlesViaDVDVideo(ctx context.Context) error {
@@ -137,7 +149,7 @@ func discoverDVDTitlesViaDVDVideo(ctx context.Context) error {
 		procSendMessageW.Call(app.titleCombo, CB_ADDSTRING, 0, uintptr(unsafe.Pointer(label)))
 		procSendMessageW.Call(app.titleCombo, CB_SETCURSEL, 0, 0)
 		setProgress(1)
-		setStatus("MKV scanned with MediaInfo. Show Metadata to select tracks.")
+		setStatus("MKV scanned. Loading selectable streams…")
 		return nil
 	}
 

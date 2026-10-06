@@ -23,7 +23,7 @@ class BatchPanel(private val activity: Activity) {
     private val inputLabel = TextView(activity).apply { text = "No movie collection folder selected" }
     private val outputLabel = TextView(activity).apply { text = "Optional — blank writes beside VIDEO_TS or beside each ISO" }
     private val progress = ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal).apply { max = 100; progress = 0 }
-    private val status = TextView(activity).apply { text = "Choose the collection folder containing Movie Title/VIDEO_TS folders and/or unmounted ISO files, then click ONECLICK BATCH." }
+    private val status = TextView(activity).apply { text = "Choose the collection folder containing Movie Title/VIDEO_TS folders and/or unmounted ISO files, then click BATCH REMUX." }
     private val cancel = Button(activity).apply { text = "Cancel"; isEnabled = false; setOnClickListener { processor.cancel(); status.text = "Cancelling…" } }
     val view: View
 
@@ -40,7 +40,7 @@ class BatchPanel(private val activity: Activity) {
         button("CHOOSE OUTPUT FOLDER (OPTIONAL)") { choose(REQUEST_OUTPUT) }
         button("CLEAR OUTPUT FOLDER") { output = null; outputLabel.text = "Optional — blank writes beside VIDEO_TS or beside each ISO" }
         content.addView(outputLabel)
-        button("ONECLICK BATCH") { start() }
+        button("BATCH REMUX") { start() }
         content.addView(cancel)
         content.addView(progress)
         content.addView(status)

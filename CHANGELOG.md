@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Simplify the main UI labels across Windows, Linux, Android and ChromeOS: rename the media tabs to **REMUX/DEMUX** and **ADVANCED**, combine desktop **Scan Titles** / **Show Metadata** into **SCAN/SELECT STREAMS**, rename the primary actions to **REMUX**, **DEMUX**, **MUX**, and **BATCH REMUX**, refresh Advanced source labels, and let MEDIA add DVD VIDEO_TS folders and DVD ISO images alongside ordinary media.
+
 - Correct Android libdvdcss stream callbacks to use byte offsets/counts and zero-on-success seeking; add sanitizer contract tests and CSS-enabled native remux parity coverage.
 - Add pinned libdvdcss 1.6.0 build/provenance and private Windows/Linux release runtimes for CSS-protected DVD access through the existing FFmpeg dvdvideo + libdvdread path.
 - Keep Linux libdvdcss search paths scoped to MattRip child media tools and add cross-platform CI that builds the pinned runtime independently of Android production signing.
