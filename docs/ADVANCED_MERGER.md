@@ -30,7 +30,7 @@ At least one non-chapter stream must remain selected before muxing.
 
 ## Output and metadata behavior
 
-Choose the output folder, enter an `.mkv` filename, and press **MUX TO MKV**.
+Choose the output folder, enter an `.mkv` filename, and press **MUX**.
 
 MattRip maps the exact selected input stream indexes and uses stream copy (`-c copy` on desktop, equivalent native libav packet copying on Android/ChromeOS). It does not intentionally re-encode video or audio. On Windows and Linux, each DVD input (VIDEO_TS, ISO, or physical drive) is opened with `-analyzeduration 100M -probesize 100M -fflags +genpts`. In mixed jobs those 100M probe overrides are scoped only to DVD inputs. Ordinary MKV/MP4/raw inputs keep their existing media-input handling instead of inheriting the DVD-specific 100M probe limits.
 
