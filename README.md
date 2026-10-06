@@ -26,7 +26,7 @@ The main **REMUX/DEMUX** tab accepts:
 
 For DVD sources, MattRip discovers DVD titles, automatically selects the longest readable title, and lets you inspect metadata before processing. Video, audio, and subtitle streams are individually selectable. All detected streams are selected by default.
 
-Choose **Start Remux** to create an MKV using stream copy. Chapter preservation is optional.
+Choose **REMUX** to create an MKV using stream copy. Chapter preservation is optional.
 
 Windows and Linux use FFmpeg's `dvdvideo` input backed by `libdvdread`/`libdvdnav`. Self-contained desktop builds keep libdvdcss private to MattRip and let libdvdread discover it dynamically; no separate CSS remux engine is introduced. Direct GitHub/development Android builds statically link libdvdcss into the JNI bridge and decrypt scrambled VOB sectors before the existing native FFmpeg/libav stream-copy reader consumes them. The Google Play build keeps CSS disabled for now. MattRip does not use its own DVD IFO parser.
 
@@ -73,7 +73,7 @@ See [`docs/ADVANCED_MERGER.md`](docs/ADVANCED_MERGER.md) for details.
 
 ### BATCH
 
-**ONECLICK BATCH** scans a collection and losslessly remuxes discovered DVD movies to MKV. It supports `Movie/VIDEO_TS` folders and unmounted `.iso` files, automatically selects the longest readable title, preserves streams and chapters, and continues to later items when one item fails.
+**BATCH REMUX** scans a collection and losslessly remuxes discovered DVD movies to MKV. It supports `Movie/VIDEO_TS` folders and unmounted `.iso` files, automatically selects the longest readable title, preserves streams and chapters, and continues to later items when one item fails.
 
 Example collection:
 
@@ -122,7 +122,7 @@ BATCH and CLI are DVD-oriented workflows; MKV source selection and raw-stream ex
 
 ## Track selection and metadata
 
-Use **Show Metadata** to inspect a selected source and choose exactly which video, audio, and subtitle streams to process.
+Use **SCAN/SELECT STREAMS** to scan a new source (automatically selecting the longest DVD title) and choose exactly which video, audio, and subtitle streams to process. After changing the title selection, use the same button to refresh the stream selection for that title.
 
 For example:
 
