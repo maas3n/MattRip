@@ -126,8 +126,9 @@ jobs:
 
           python3 android/native/verify-package.py "${APK}" "${AAB}"
 
-          unzip -p "${APK}" assets/ffmpeg/ffmpeg-build-info.txt \
-            | grep -q 'FFmpeg version: 9.0.1'
+          build_info="$(unzip -p "${APK}" assets/ffmpeg/ffmpeg-build-info.txt)"
+          grep -q 'FFmpeg version: 9.0.1' <<<"${build_info}"
+          grep -q 'CSS support: libdvdcss 1.6.0' <<<"${build_info}"
 
           "${ANDROID_HOME}/build-tools/36.0.0/zipalign" \
             -c -P 16 -v 4 "${APK}"
