@@ -143,7 +143,7 @@ func createControls(hwnd, hInstance uintptr) {
 	add(0, "STATIC", "MattRip", WS_CHILD|WS_VISIBLE, 28, 22, 300, 42, 0, app.headerFont)
 	add(0, "STATIC", "Lossless DVD title remuxing to Matroska — video, audio, subtitles, chapters and metadata.", WS_CHILD|WS_VISIBLE, 30, 64, 750, 24, 0, app.bodyFont)
 	add(0, "BUTTON", "Source", WS_CHILD|WS_VISIBLE|BS_GROUPBOX, 22, 102, 770, 112, 0, app.bodyFont)
-	add(0, "STATIC", "DVD / DRIVE / VIDEO_TS / ISO / MKV", WS_CHILD|WS_VISIBLE, 38, 127, 270, 22, 0, app.bodyFont)
+	add(0, "STATIC", "MEDIA: DRIVE / VIDEO_TS / ISO / MKV", WS_CHILD|WS_VISIBLE, 38, 127, 320, 22, 0, app.bodyFont)
 	app.sourceEdit = add(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD|WS_VISIBLE|WS_TABSTOP|ES_AUTOHSCROLL, 38, 150, 392, 28, idSourceEdit, app.bodyFont)
 	app.sourceDVDButton = add(0, "BUTTON", "DVD Folder…", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 442, 148, 100, 31, idDVDButton, app.bodyFont)
 	app.sourceISOButton = add(0, "BUTTON", "ISO / MKV…", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 550, 148, 96, 31, idISOButton, app.bodyFont)
@@ -156,16 +156,15 @@ func createControls(hwnd, hInstance uintptr) {
 	add(0, "BUTTON", "DVD Title", WS_CHILD|WS_VISIBLE|BS_GROUPBOX, 22, 328, 770, 101, 0, app.bodyFont)
 	add(0, "STATIC", "Title", WS_CHILD|WS_VISIBLE, 38, 354, 45, 22, 0, app.bodyFont)
 	app.titleCombo = add(0, "COMBOBOX", "", WS_CHILD|WS_VISIBLE|WS_TABSTOP|CBS_DROPDOWNLIST|WS_VSCROLL, 82, 349, 355, 250, idTitleCombo, app.bodyFont)
-	app.scanBtn = add(0, "BUTTON", "Scan Titles", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 452, 348, 105, 32, idScanBtn, app.bodyFont)
-	app.metaBtn = add(0, "BUTTON", "Show Metadata", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 568, 348, 124, 32, idMetaBtn, app.bodyFont)
-	add(0, "BUTTON", "About", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 702, 348, 68, 32, idAboutBtn, app.bodyFont)
+	app.scanBtn = add(0, "BUTTON", "SCAN/SELECT STREAMS", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 452, 348, 218, 32, idScanBtn, app.bodyFont)
+	add(0, "BUTTON", "About", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 680, 348, 90, 32, idAboutBtn, app.bodyFont)
 	app.preserveChapters = add(0, "BUTTON", "Include chapters in remux / demux", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_AUTOCHECKBOX, 38, 389, 300, 24, idPreserveChapters, app.bodyFont)
 	app.progress = add(0, "msctls_progress32", "", WS_CHILD|WS_VISIBLE, 28, 450, 764, 16, 0, app.bodyFont)
 	procSendMessageW.Call(app.progress, PBM_SETRANGE32, 0, 1000)
 	app.statusText = add(0, "STATIC", "", WS_CHILD|WS_VISIBLE, 30, 474, 755, 42, 0, app.bodyFont)
 	add(0, "STATIC", "Remux uses fixed timestamps (-fflags +genpts).", WS_CHILD|WS_VISIBLE, 30, 516, 480, 18, 0, app.bodyFont)
-	app.remuxBtn = add(0, "BUTTON", "Start Remux", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_DEFPUSHBUTTON, 396, 535, 132, 38, idRemuxBtn, app.bodyFont)
-	app.demuxBtn = add(0, "BUTTON", "Demux", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 538, 535, 132, 38, idDemuxBtn, app.bodyFont)
+	app.remuxBtn = add(0, "BUTTON", "REMUX", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_DEFPUSHBUTTON, 396, 535, 132, 38, idRemuxBtn, app.bodyFont)
+	app.demuxBtn = add(0, "BUTTON", "DEMUX", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 538, 535, 132, 38, idDemuxBtn, app.bodyFont)
 	app.cancelBtn = add(0, "BUTTON", "Cancel", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON, 680, 535, 110, 38, idCancelBtn, app.bodyFont)
 	procEnableWindow.Call(app.cancelBtn, 0)
 }
@@ -227,12 +226,12 @@ func windowProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 		case idSourceEdit:
 			if notify == EN_CHANGE && !app.busy.Load() {
 				app.invalidateTitles()
-				setStatus("Source changed. Scan titles again.")
+				setStatus("Source changed. Click SCAN/SELECT STREAMS.")
 			}
 		case idTitleCombo:
 			if notify == 1 && !app.busy.Load() {
 				clearWindowsTrackSelection()
-				setStatus("Title changed. Show Metadata to review track selection for this title.")
+				setStatus("Title changed. Click SCAN/SELECT STREAMS to review stream selection for this title.")
 			}
 		case idDVDButton:
 			if !app.busy.Load() {
@@ -269,9 +268,7 @@ func windowProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 				}
 			}
 		case idScanBtn:
-			startAsync("Scanning DVD titles through FFmpeg dvdvideo/libdvdread/libdvdnav…", discoverDVDTitlesViaDVDVideo)
-		case idMetaBtn:
-			startAsync("Reading title metadata…", showMetadata)
+			startAsync("Scanning source and loading selectable streams…", scanSelectStreams)
 		case idRemuxBtn:
 			startAsync("Preparing remux…", remuxSelected)
 		case idDemuxBtn:
