@@ -147,21 +147,25 @@ static ssize_t source_raw_read_at(SourceContext *ctx, int64_t source_pos, uint8_
 }
 
 #ifdef MATTMUX_DVDCSS
-static int mattmux_dvdcss_stream_seek(void *opaque, uint64_t offset)
+static int mattmux_dvdcss_stream_seek(void *opaque, uint64_t block)
 {
     SourceContext *ctx = (SourceContext *)opaque;
-    if (!ctx || offset > (uint64_t)ctx->total_source_size || offset > INT64_MAX) return -1;
-    ctx->dvdcss_stream_pos = (int64_t)offset;
-    return 0;
+    if (!ctx || block > INT_MAX ||
+        block > (uint64_t)(ctx->total_source_size / DVDCSS_BLOCK_SIZE)) return -1;
+    ctx->dvdcss_stream_pos = (int64_t)block * DVDCSS_BLOCK_SIZE;
+    return (int)block;
 }
 
-static int mattmux_dvdcss_stream_read(void *opaque, void *buffer, int bytes)
+static int mattmux_dvdcss_stream_read(void *opaque, void *buffer, int blocks)
 {
     SourceContext *ctx = (SourceContext *)opaque;
-    if (!ctx || !buffer || bytes < 0) return -1;
-    ssize_t n = source_raw_read_at(ctx, ctx->dvdcss_stream_pos, buffer, (size_t)bytes);
-    if (n > 0) ctx->dvdcss_stream_pos += n;
-    return n < 0 || n > INT_MAX ? -1 : (int)n;
+    if (!ctx || !buffer || blocks < 0 ||
+        blocks > INT_MAX / DVDCSS_BLOCK_SIZE) return -1;
+    size_t wanted = (size_t)blocks * DVDCSS_BLOCK_SIZE;
+    ssize_t n = source_raw_read_at(ctx, ctx->dvdcss_stream_pos, buffer, wanted);
+    if (n < 0 || n % DVDCSS_BLOCK_SIZE != 0) return -1;
+    ctx->dvdcss_stream_pos += n;
+    return (int)(n / DVDCSS_BLOCK_SIZE);
 }
 
 static int source_sector_is_scrambled(const unsigned char *sector)
