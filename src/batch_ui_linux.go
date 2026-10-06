@@ -20,7 +20,7 @@ func (g *linuxGUI) buildBatch() fyne.CanvasObject {
 	output := widget.NewEntry()
 	output.SetPlaceHolder("Optional — blank writes each MKV into its movie title folder")
 	progress := widget.NewProgressBar()
-	status := widget.NewLabel("Choose the movie collection folder, then click ONECLICK BATCH.")
+	status := widget.NewLabel("Choose the movie collection folder, then click BATCH REMUX.")
 	status.Wrapping = fyne.TextWrapWord
 
 	chooseInput := widget.NewButton("CHOOSE MOVIE FOLDER", func() {
@@ -49,14 +49,14 @@ func (g *linuxGUI) buildBatch() fyne.CanvasObject {
 	})
 
 	cancel := widget.NewButton("Cancel", g.cancelCurrent)
-	oneClick := widget.NewButton("ONECLICK BATCH", func() {
+	oneClick := widget.NewButton("BATCH REMUX", func() {
 		root := strings.TrimSpace(input.Text)
 		if root == "" {
 			dialog.ShowInformation("Choose a movie folder", "Choose the folder containing the movie title folders first.", g.window)
 			return
 		}
 		outRoot := strings.TrimSpace(output.Text)
-		g.startAsync("Running one-click batch mux…", func(ctx context.Context) error {
+		g.startAsync("Running batch remux…", func(ctx context.Context) error {
 			result, err := runBatch(ctx, batchOptions{InputRoot: root, OutputRoot: outRoot}, func(frac float64, text string) {
 				fyne.Do(func() {
 					if frac < 0 {
@@ -84,7 +84,7 @@ func (g *linuxGUI) buildBatch() fyne.CanvasObject {
 	})
 	oneClick.Importance = widget.HighImportance
 
-	help := widget.NewLabel("One-click batch scans each VIDEO_TS movie or unmounted ISO through FFmpeg dvdvideo (libdvdread/libdvdnav), automatically selects the longest title, includes all streams, preserves chapters, and remuxes with -analyzeduration 100M -probesize 100M -fflags +genpts. Leave Output Folder blank to place each completed MKV beside its ISO or VIDEO_TS folder.")
+	help := widget.NewLabel("BATCH REMUX scans each VIDEO_TS movie or unmounted ISO through FFmpeg dvdvideo (libdvdread/libdvdnav), automatically selects the longest title, includes all streams, preserves chapters, and remuxes with -analyzeduration 100M -probesize 100M -fflags +genpts. Leave Output Folder blank to place each completed MKV beside its ISO or VIDEO_TS folder.")
 	help.Wrapping = fyne.TextWrapWord
 
 	inputRow := container.NewBorder(nil, nil, nil, chooseInput, input)
