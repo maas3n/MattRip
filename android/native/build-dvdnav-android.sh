@@ -43,9 +43,6 @@ if [[ "$MATTRIP_ANDROID_CSS" == "1" ]]; then
 fi
 (cd "$READ_SRC" && autoreconf -fi)
 (cd "$NAV_SRC" && autoreconf -fi)
-if [[ "$MATTRIP_ANDROID_CSS" == "1" ]]; then
-    (cd "$CSS_SRC" && autoreconf -fi)
-fi
 
 case "$(uname -s)-$(uname -m)" in
   Linux-x86_64) HOST_TAG=linux-x86_64 ;;
@@ -69,15 +66,41 @@ build_one() {
     rm -rf "$read_build" "$nav_build" "$css_build"
     mkdir -p "$read_build" "$nav_build"
     if [[ "$MATTRIP_ANDROID_CSS" == "1" ]]; then
+        command -v meson >/dev/null 2>&1 || { echo "Meson is required for libdvdcss ${DVDCSS_VERSION}" >&2; exit 1; }
         mkdir -p "$css_build"
-        (
-            cd "$css_build"
-            CC="$cc" AR="$AR" RANLIB="$RANLIB" STRIP="$STRIP" \
-              CFLAGS='-O2 -fPIC' LDFLAGS='-Wl,-z,max-page-size=16384' \
-              "$CSS_SRC/configure" --host="$target" --prefix="$prefix" --enable-static --disable-shared
-            make -j2
-            make install
-        )
+        local css_cpu_family css_cpu
+        case "$abi" in
+            arm64-v8a) css_cpu_family=aarch64; css_cpu=aarch64 ;;
+            x86_64) css_cpu_family=x86_64; css_cpu=x86_64 ;;
+            *) echo "Unsupported libdvdcss Android ABI: $abi" >&2; exit 1 ;;
+        esac
+        local css_cross="$css_build/android-cross.ini"
+        cat > "$css_cross" <<EOF
+[binaries]
+c = '$cc'
+ar = '$AR'
+strip = '$STRIP'
+
+[host_machine]
+system = 'android'
+cpu_family = '$css_cpu_family'
+cpu = '$css_cpu'
+endian = 'little'
+
+[properties]
+needs_exe_wrapper = true
+
+[built-in options]
+c_args = ['-O2', '-fPIC']
+c_link_args = ['-Wl,-z,max-page-size=16384']
+EOF
+        meson setup "$css_build/out" "$CSS_SRC" \
+          --cross-file "$css_cross" \
+          --prefix "$prefix" --libdir lib \
+          --buildtype release --default-library static \
+          -Db_staticpic=true -Denable_docs=false -Denable_examples=false
+        meson compile -C "$css_build/out"
+        meson install -C "$css_build/out"
         test -s "$prefix/lib/libdvdcss.a"
         test -f "$prefix/include/dvdcss/dvdcss.h"
     fi
