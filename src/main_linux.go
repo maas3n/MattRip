@@ -114,7 +114,7 @@ func (g *linuxGUI) build() {
 	timestampNotice.Wrapping = fyne.TextWrapWord
 	actions := container.NewHBox(layout.NewSpacer(), g.remuxBtn, g.demuxBtn, g.cancelBtn)
 	dvdTab := container.NewPadded(container.NewVBox(header, widget.NewSeparator(), widget.NewLabelWithStyle("Source", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), sourceRow, widget.NewLabel("Choose a DVD folder / VIDEO_TS structure, ISO image, MKV file, or physical DVD drive."), widget.NewSeparator(), widget.NewLabelWithStyle("Destination", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), outputRow, widget.NewSeparator(), widget.NewLabelWithStyle("DVD Title", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), titleRow, g.trackSummary, g.preserve, widget.NewSeparator(), g.progress, g.status, layout.NewSpacer(), timestampNotice, actions))
-	g.window.SetContent(container.NewAppTabs(container.NewTabItem("DVD Remux", dvdTab), container.NewTabItem("Advanced Merger", g.buildAdvancedMerger()), container.NewTabItem("BATCH", g.buildBatch()), container.NewTabItem("CLI", g.buildCLI())))
+	g.window.SetContent(container.NewAppTabs(container.NewTabItem("REMUX/DEMUX", dvdTab), container.NewTabItem("ADVANCED", g.buildAdvancedMerger()), container.NewTabItem("BATCH", g.buildBatch()), container.NewTabItem("CLI", g.buildCLI())))
 }
 
 func (g *linuxGUI) chooseDVDFolder() {
