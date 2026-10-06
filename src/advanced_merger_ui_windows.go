@@ -55,7 +55,7 @@ func createMergerWindowsControls(hwnd, hInstance uintptr) {
 	}
 	mergerWindow.tab = add("SysTabControl32", "", WS_VISIBLE, 22, 5, 770, 32, 7199)
 	mergerWindow.controls = nil
-	for i, label := range []string{"DVD Remux", "Advanced Merger", "BATCH", "CLI"} {
+	for i, label := range []string{"REMUX/DEMUX", "ADVANCED", "BATCH", "CLI"} {
 		item := mergerTabItem{Mask: 1, Text: utf16Ptr(label)}
 		procSendMessageW.Call(mergerWindow.tab, 0x133e, uintptr(i), uintptr(unsafe.Pointer(&item)))
 	}
