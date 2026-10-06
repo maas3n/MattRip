@@ -18,7 +18,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /** Uses private temporary files so all demuxers can seek and resolve subtitle sidecars. */
 class AdvancedMergerPanel(private val activity: Activity) {
-    companion object { const val FIRST_REQUEST = 8100 }
+    companion object {
+        const val FIRST_REQUEST = 8100
+        private const val MEDIA_FOLDER_REQUEST = 8105
+    }
     private val native = AdvancedMergerNative()
     private val dvdEngine = AndroidNativeRemuxEngine()
     private val root = File(activity.cacheDir, "merger-${System.nanoTime()}").apply { mkdirs() }
@@ -34,7 +37,7 @@ class AdvancedMergerPanel(private val activity: Activity) {
     @Volatile private var destroyed = false
     @Volatile private var busy = false
     private val status = TextView(activity).apply { text = "Choose files and select streams. Temporary space is needed for input copies and the output MKV." }
-    private val chapterLabel = TextView(activity).apply { text = "No chapter override (optional MKV or FFMETADATA1)" }
+    private val chapterLabel = TextView(activity).apply { text = "No chapter override (optional FFMETADATA1 .txt or MKV with chapters)" }
     private val outputLabel = TextView(activity).apply { text = "Choose output folder" }
     private val filename = EditText(activity).apply { setSingleLine(); setText("merged.mkv") }
     private val streamList = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
@@ -45,13 +48,13 @@ class AdvancedMergerPanel(private val activity: Activity) {
         val padding = (24 * activity.resources.displayMetrics.density).toInt()
         val content = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL; setPadding(padding, padding, padding, padding) }
         fun button(label: String, action: () -> Unit) { content.addView(Button(activity).apply { text = label; setOnClickListener { action() }; controls += this }) }
-        button("CHOOSE MOVIE FILES / DVD ISO") { choose(0) }
-        button("CHOOSE AUDIO FILES FROM MKV or RAW") { choose(1) }
-        button("CHOOSE SUBTITLE FILES FROM MKV or RAW") { choose(2) }
-        content.addView(TextView(activity).apply { text = "Select Streams — movie inputs include every stream and embedded chapters. DVD ISO inputs are staged for MUX; DEMUX reads the original longest DVD title directly." })
+        button("MEDIA(All streams included)") { chooseMedia() }
+        button("ADD AUDIO(Only audio streams will be included)") { choose(1) }
+        button("ADD SUBTITLE(Only subtitle streams will be Included)") { choose(2) }
+        content.addView(TextView(activity).apply { text = "Select Streams — MEDIA includes every stream and embedded chapters. DVD / VIDEO_TS folders and DVD ISO inputs use the longest DVD title." })
         content.addView(streamList)
         button("Clear streams") { selections.clear(); streamList.removeAllViews() }
-        button("CHOOSE CHAPTER FILE FROM MKV or RAW") { choose(3) }
+        button("ADD CHAPTER .txt FILE(FFMETADATA1 Format)") { choose(3) }
         content.addView(chapterLabel)
         button("Clear chapter override") { chapters = null; chapterLabel.text = "No chapter override" }
         button("CHOOSE OUTPUT FOLDER") { activity.startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), FIRST_REQUEST + 4) }
@@ -64,17 +67,36 @@ class AdvancedMergerPanel(private val activity: Activity) {
         view = ScrollView(activity).apply { addView(content) }
     }
 
+    private fun chooseMedia() {
+        AlertDialog.Builder(activity)
+            .setTitle("Add media")
+            .setItems(arrayOf("Media file(s) / DVD ISO", "DVD / VIDEO_TS folder")) { _, choice ->
+                if (choice == 0) {
+                    choose(0)
+                } else {
+                    activity.startActivityForResult(
+                        Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+                        },
+                        MEDIA_FOLDER_REQUEST,
+                    )
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
     private fun choose(kind: Int) {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE); type = "*/*"
             putExtra(Intent.EXTRA_ALLOW_MULTIPLE, kind != 3)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
         }
         activity.startActivityForResult(intent, FIRST_REQUEST + kind)
     }
 
     fun onResult(request: Int, result: Int, data: Intent?): Boolean {
-        if (request !in FIRST_REQUEST..FIRST_REQUEST + 4) return false
+        if (request !in FIRST_REQUEST..MEDIA_FOLDER_REQUEST) return false
         if (result != Activity.RESULT_OK || data == null || busy) return true
         if (request == FIRST_REQUEST + 4) {
             output = data.data; outputLabel.text = output.toString(); return true
@@ -83,10 +105,11 @@ class AdvancedMergerPanel(private val activity: Activity) {
         data.clipData?.let { clip -> repeat(clip.itemCount) { uris += clip.getItemAt(it).uri } }
         if (uris.isEmpty()) data.data?.let { uris += it }
         if (uris.isEmpty()) return true
-        val kind = request - FIRST_REQUEST
+        val movieFolder = request == MEDIA_FOLDER_REQUEST
+        val kind = if (movieFolder) 0 else request - FIRST_REQUEST
         run("Preparing inputs…") {
-            // Copy ordinary inputs before probing. Movie ISO inputs are losslessly staged through the native DVD engine first.
-            val files = uris.map { uri -> sources[uri] ?: prepareInput(uri, kind).also { sources[uri] = it } }
+            // Copy ordinary inputs before probing. DVD folder/ISO inputs are losslessly staged through the native DVD engine first.
+            val files = uris.map { uri -> sources[uri] ?: prepareInput(uri, kind, movieFolder).also { sources[uri] = it } }
             if (kind == 3) {
                 val file = files.single()
                 native.validateChapters(file.absolutePath)?.let { error(it) }
@@ -125,20 +148,20 @@ class AdvancedMergerPanel(private val activity: Activity) {
         return true
     }
 
-    private fun prepareInput(uri: Uri, kind: Int): File {
+    private fun prepareInput(uri: Uri, kind: Int, movieFolder: Boolean = false): File {
         val name = displayName(uri)
-        if (kind == 0 && name.endsWith(".iso", ignoreCase = true)) {
+        if (kind == 0 && (movieFolder || name.endsWith(".iso", ignoreCase = true))) {
             check(dvdEngine.isAvailable) { dvdEngine.unavailableReason ?: "Native DVD engine unavailable" }
-            val stem = name.dropLast(4).trim().ifBlank { "DVD" }
-            val safeStem = stem.replace(Regex("[^A-Za-z0-9._ -]"), "_")
+            val stem = if (name.endsWith(".iso", ignoreCase = true)) name.dropLast(4) else name
+            val safeStem = stem.trim().ifBlank { "DVD" }.replace(Regex("[^A-Za-z0-9._ -]"), "_")
             val staged = File(root, "$safeStem-dvd-title.mkv")
             require(!staged.exists()) { "Two movie inputs resolve to the same staged DVD title name: ${staged.name}" }
-            activity.runOnUiThread { status.text = "Reading DVD ISO and staging the longest title for MUX: $name" }
+            activity.runOnUiThread { status.text = "Reading DVD source and staging the longest title for MUX: $name" }
             val direct = dvdEngine.probeTracks(activity, uri)
             val title = dvdEngine.remuxTitleToFile(activity, uri, staged, requestedTitle = direct.title, preserveChapters = true)
             check(title == direct.title) { "DVD title changed while staging" }
             dvdSources[staged] = DvdSource(uri, title, direct.tracks)
-            activity.runOnUiThread { status.text = "DVD ISO title $title ready for MUX and direct DEMUX" }
+            activity.runOnUiThread { status.text = "DVD title $title ready for MUX and direct DEMUX" }
             return staged
         }
         return copyInput(uri, name)
