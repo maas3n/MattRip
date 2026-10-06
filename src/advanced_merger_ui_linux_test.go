@@ -36,7 +36,33 @@ func TestAdvancedMergerAndBatchTabs(t *testing.T) {
 		t.Fatal("missing BATCH tab")
 	}
 
-	var media, dvdDrive, audioStreams, subtitleStreams, chapterFile, demux bool
+	var scanSelect, remux, mainDemux bool
+	walkLinuxCanvas(tabs.Items[0].Content, func(obj fyne.CanvasObject) {
+		if button, ok := obj.(*widget.Button); ok {
+			switch button.Text {
+			case "SCAN/SELECT STREAMS":
+				scanSelect = true
+			case "REMUX":
+				remux = true
+			case "DEMUX":
+				mainDemux = true
+			}
+		}
+	})
+	if !scanSelect || !remux || !mainDemux {
+		t.Fatal("REMUX/DEMUX action buttons are incomplete")
+	}
+	batchRemux := false
+	walkLinuxCanvas(tabs.Items[2].Content, func(obj fyne.CanvasObject) {
+		if button, ok := obj.(*widget.Button); ok && button.Text == "BATCH REMUX" {
+			batchRemux = true
+		}
+	})
+	if !batchRemux {
+		t.Fatal("BATCH tab is missing BATCH REMUX")
+	}
+
+	var media, dvdDrive, audioStreams, subtitleStreams, chapterFile, demux, mux bool
 	var activity *widget.ProgressBarInfinite
 	walkLinuxCanvas(tabs.Items[1].Content, func(obj fyne.CanvasObject) {
 		switch o := obj.(type) {
@@ -54,6 +80,8 @@ func TestAdvancedMergerAndBatchTabs(t *testing.T) {
 				chapterFile = true
 			case "DEMUX":
 				demux = true
+			case "MUX":
+				mux = true
 			}
 		case *widget.ProgressBarInfinite:
 			activity = o
@@ -62,8 +90,8 @@ func TestAdvancedMergerAndBatchTabs(t *testing.T) {
 	if !media || !dvdDrive || !audioStreams || !subtitleStreams || !chapterFile {
 		t.Fatal("Advanced Merger source buttons are incomplete")
 	}
-	if !demux {
-		t.Fatal("Advanced Merger is missing its DEMUX button")
+	if !demux || !mux {
+		t.Fatal("Advanced Merger is missing its MUX/DEMUX buttons")
 	}
 	if activity == nil {
 		t.Fatal("Advanced Merger is missing its activity progress bar")
