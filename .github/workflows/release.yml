@@ -521,7 +521,9 @@ jobs:
           grep -Fq "versionName='$version'" <<<"$BADGING"
 
           python3 android/native/verify-package.py "$APK"
-          unzip -p "$APK" assets/ffmpeg/ffmpeg-build-info.txt | grep -q 'FFmpeg version: 9.0.1'
+          build_info="$(unzip -p "$APK" assets/ffmpeg/ffmpeg-build-info.txt)"
+          grep -q 'FFmpeg version: 9.0.1' <<<"$build_info"
+          grep -q 'CSS support: libdvdcss 1.6.0' <<<"$build_info"
           "${ANDROID_HOME}/build-tools/36.0.0/zipalign" -c -P 16 -v 4 "$APK"
           "${ANDROID_HOME}/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK" | tee /tmp/mattrip-apksigner.txt
           ! grep -Fq "CN=Android Debug" /tmp/mattrip-apksigner.txt
