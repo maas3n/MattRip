@@ -37,6 +37,12 @@ install -m 0755 "$FFPROBE" "$PAYLOAD/ffprobe"
 install -m 0755 "$MEDIAINFO" "$PAYLOAD/mediainfo"
 gcc -O2 -Wall -Wextra "$ROOT/packaging/linux/graphics-probe.c" -o "$PAYLOAD/graphics-probe" -lGL -lX11
 python3 "$ROOT/packaging/linux/bundle-standalone-libs.py" "$PAYLOAD"
+# libdvdread loads libdvdcss with dlopen. Keep it inside the standalone's
+# existing private lib directory so runtimeEnv() exposes it only to MattRip.
+LIBDVDCSS_PREFIX="$WORK/tools/libdvdcss-install"
+test -e "$LIBDVDCSS_PREFIX/lib/libdvdcss.so.2" || { echo "libdvdcss runtime is missing from Linux build work" >&2; exit 1; }
+cp -a "$LIBDVDCSS_PREFIX"/lib/libdvdcss.so* "$PAYLOAD/lib/"
+test -e "$PAYLOAD/lib/libdvdcss.so.2"
 # Preserve the existing multimedia notices alongside the new GUI notices.
 cp -a "$WORK/deb-root/usr/share/doc/mattrip/." "$PAYLOAD/licenses/"
 python3 "$ROOT/packaging/linux/collect-standalone-sources.py" \

@@ -38,7 +38,15 @@ for filename in sys.argv[1:]:
                 raise SystemExit(f'{filename}: forbidden or versioned dependency: {name}\n{needed}')
         if set(found) != ABIS or any(found[abi] != EXPECTED for abi in ABIS):
             raise SystemExit(f'{filename}: unexpected native package contents: {found}')
-        for notice in ('COPYING.LGPLv2.1', 'LIBUDFREAD_COPYING.txt', 'DVDREAD_COPYING.txt', 'DVDNAV_COPYING.txt', 'ffmpeg-build-info.txt', 'MediaInfoLib-License.html', 'ZenLib-License.txt', 'NDK-NOTICE.txt'):
+        build_info_path = prefix + 'assets/ffmpeg/ffmpeg-build-info.txt'
+        build_info = archive.read(build_info_path).decode('utf-8', errors='strict')
+        css_enabled = 'CSS support: libdvdcss 1.6.0' in build_info
+        notices = ['COPYING.LGPLv2.1', 'LIBUDFREAD_COPYING.txt', 'DVDREAD_COPYING.txt', 'DVDNAV_COPYING.txt',
+                   'ffmpeg-build-info.txt', 'MediaInfoLib-License.html', 'ZenLib-License.txt', 'NDK-NOTICE.txt']
+        if css_enabled:
+            notices.append('LIBDVDCSS_COPYING.txt')
+        for notice in notices:
             if not archive.read(prefix + 'assets/ffmpeg/' + notice):
                 raise SystemExit(f'{filename}: missing/empty notice {notice}')
-        print(f'{filename}: both ABIs, all native ELFs, 16 KB alignment, dependency and notice audit PASS')
+        css_label = 'CSS-capable' if css_enabled else 'CSS-free'
+        print(f'{filename}: both ABIs, all native ELFs, 16 KB alignment, dependency and notice audit PASS ({css_label})')

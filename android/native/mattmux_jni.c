@@ -26,6 +26,9 @@
 #include <android/log.h>
 #endif
 #include <libavutil/timestamp.h>
+#ifdef MATTMUX_DVDCSS
+#include <dvdcss/dvdcss.h>
+#endif
 
 #define IO_BUFFER_SIZE (64 * 1024)
 #define DVD_SECTOR_SIZE 2048LL
@@ -59,6 +62,14 @@ typedef struct {
     int64_t stream_size;
     int64_t window_start, window_end; /* one continuous DVD clock domain */
     int64_t pos;
+#ifdef MATTMUX_DVDCSS
+    dvdcss_t dvdcss;
+    dvdcss_stream_cb dvdcss_callbacks;
+    int64_t dvdcss_stream_pos;
+    int64_t cached_source_sector;
+    unsigned char cached_sector[DVDCSS_BLOCK_SIZE];
+    int dvdcss_key_ready;
+#endif
 } SourceContext;
 
 typedef struct {
@@ -102,6 +113,101 @@ static int find_file(const SourceContext *ctx, int64_t source_pos)
     return -1;
 }
 
+static ssize_t source_raw_read_at(SourceContext *ctx, int64_t source_pos, uint8_t *buf, size_t wanted)
+{
+    if (!ctx || source_pos < 0 || source_pos > ctx->total_source_size) return -1;
+    size_t done = 0;
+    while (done < wanted && source_pos < ctx->total_source_size) {
+        if (is_cancelled(ctx->cancel)) return -1;
+        int file_index = find_file(ctx, source_pos);
+        if (file_index < 0) return -1;
+        int64_t file_start = ctx->file_starts[file_index];
+        int64_t file_end = (file_index + 1 < ctx->fd_count) ? ctx->file_starts[file_index + 1] : ctx->total_source_size;
+        int64_t available = file_end - source_pos;
+        size_t chunk = wanted - done;
+        if ((int64_t)chunk > available) chunk = (size_t)available;
+        if (!chunk) break;
+
+        ssize_t n;
+        if (ctx->udf) {
+            UDFFILE *file = ctx->udf_files[file_index];
+            int64_t offset = source_pos - file_start;
+            if (udfread_file_seek(file, offset, SEEK_SET) != offset) return -1;
+            n = udfread_file_read(file, buf + done, chunk);
+        } else {
+            do {
+                n = pread(ctx->fds[file_index], buf + done, chunk, (off_t)(source_pos - file_start));
+            } while (n < 0 && errno == EINTR && !is_cancelled(ctx->cancel));
+        }
+        if (n <= 0) return done ? (ssize_t)done : -1;
+        done += (size_t)n;
+        source_pos += n;
+    }
+    return (ssize_t)done;
+}
+
+#ifdef MATTMUX_DVDCSS
+#include "dvdcss_stream.h"
+
+static int source_sector_is_scrambled(const unsigned char *sector)
+{
+    return sector[0] == 0x00 && sector[1] == 0x00 && sector[2] == 0x01 &&
+           sector[3] == 0xba && (sector[0x14] & 0x30) != 0;
+}
+
+static int source_open_dvdcss(SourceContext *ctx)
+{
+    if (ctx->dvdcss) return 0;
+    ctx->dvdcss_callbacks.pf_seek = mattmux_dvdcss_stream_seek;
+    ctx->dvdcss_callbacks.pf_read = mattmux_dvdcss_stream_read;
+    ctx->dvdcss_callbacks.pf_readv = NULL;
+    ctx->dvdcss_stream_pos = 0;
+    ctx->dvdcss = dvdcss_open_stream(ctx, &ctx->dvdcss_callbacks);
+    return ctx->dvdcss ? 0 : AVERROR(EIO);
+}
+
+static int source_load_sector(SourceContext *ctx, int64_t sector)
+{
+    if (sector < 0 || sector > INT_MAX ||
+        sector > ctx->total_source_size / DVDCSS_BLOCK_SIZE - 1) return AVERROR(EIO);
+    if (ctx->cached_source_sector == sector) return 0;
+
+    int64_t byte_pos = sector * (int64_t)DVDCSS_BLOCK_SIZE;
+    if (source_raw_read_at(ctx, byte_pos, ctx->cached_sector, DVDCSS_BLOCK_SIZE) != DVDCSS_BLOCK_SIZE)
+        return is_cancelled(ctx->cancel) ? AVERROR_EXIT : AVERROR(EIO);
+
+    if (source_sector_is_scrambled(ctx->cached_sector)) {
+        int ret = source_open_dvdcss(ctx);
+        if (ret < 0) return ret;
+        int seek_flags = ctx->dvdcss_key_ready ? DVDCSS_NOFLAGS : DVDCSS_SEEK_KEY;
+        if (dvdcss_seek(ctx->dvdcss, (int)sector, seek_flags) < 0) return AVERROR(EIO);
+        ctx->dvdcss_key_ready = 1;
+        if (dvdcss_read(ctx->dvdcss, ctx->cached_sector, 1, DVDCSS_READ_DECRYPT) != 1)
+            return AVERROR(EIO);
+    }
+
+    ctx->cached_source_sector = sector;
+    return 0;
+}
+
+static int source_read_css_aware(SourceContext *ctx, int64_t source_pos, uint8_t *buf, int wanted)
+{
+    int done = 0;
+    while (done < wanted) {
+        int64_t sector = source_pos / DVDCSS_BLOCK_SIZE;
+        int offset = (int)(source_pos % DVDCSS_BLOCK_SIZE);
+        int ret = source_load_sector(ctx, sector);
+        if (ret < 0) return done ? done : ret;
+        int chunk = DVDCSS_BLOCK_SIZE - offset;
+        if (chunk > wanted - done) chunk = wanted - done;
+        memcpy(buf + done, ctx->cached_sector + offset, (size_t)chunk);
+        source_pos += chunk;
+        done += chunk;
+    }
+    return done;
+}
+#endif
+
 static int source_read(void *opaque, uint8_t *buf, int buf_size)
 {
     SourceContext *ctx = (SourceContext *)opaque;
@@ -113,32 +219,22 @@ static int source_read(void *opaque, uint8_t *buf, int buf_size)
     SourceSpan *span = &ctx->spans[span_index];
     int64_t in_span = ctx->pos - span->stream_start;
     int64_t source_pos = span->source_start + in_span;
-    int file_index = find_file(ctx, source_pos);
-    if (file_index < 0) return AVERROR(EIO);
-
-    int64_t file_start = ctx->file_starts[file_index];
-    int64_t file_end = (file_index + 1 < ctx->fd_count) ? ctx->file_starts[file_index + 1] : ctx->total_source_size;
     int64_t remaining_span = span->length - in_span;
-    int64_t remaining_file = file_end - source_pos;
     int64_t wanted = buf_size;
     if (wanted > ctx->window_end - ctx->pos) wanted = ctx->window_end - ctx->pos;
     if (wanted > remaining_span) wanted = remaining_span;
-    if (wanted > remaining_file) wanted = remaining_file;
-    if (wanted <= 0) return AVERROR(EIO);
+    if (wanted <= 0 || wanted > INT_MAX) return AVERROR(EIO);
 
-    ssize_t n;
-    if (ctx->udf) {
-        UDFFILE *file = ctx->udf_files[file_index];
-        if (udfread_file_seek(file, source_pos - file_start, SEEK_SET) != source_pos - file_start)
-            return AVERROR(EIO);
-        n = udfread_file_read(file, buf, (size_t)wanted);
-    } else {
-        do { n = pread(ctx->fds[file_index], buf, (size_t)wanted, (off_t)(source_pos - file_start)); }
-        while (n < 0 && errno == EINTR && !is_cancelled(ctx->cancel));
-    }
+    int n;
+#ifdef MATTMUX_DVDCSS
+    n = source_read_css_aware(ctx, source_pos, buf, (int)wanted);
+#else
+    ssize_t raw = source_raw_read_at(ctx, source_pos, buf, (size_t)wanted);
+    n = raw < 0 || raw > INT_MAX ? -1 : (int)raw;
+#endif
     if (n <= 0) return is_cancelled(ctx->cancel) ? AVERROR_EXIT : AVERROR(EIO);
     ctx->pos += n;
-    return (int)n;
+    return n;
 }
 
 static int64_t source_seek(void *opaque, int64_t offset, int whence)
@@ -207,6 +303,9 @@ static int init_source(JNIEnv *env, jintArray fd_array, jlongArray starts_array,
                        SourceContext *ctx, DvdUdfSource *udf, int title_set, CancelContext *cancel, char *error, size_t error_size)
 {
     memset(ctx, 0, sizeof(*ctx));
+#ifdef MATTMUX_DVDCSS
+    ctx->cached_source_sector = -1;
+#endif
     ctx->cancel = cancel;
     ctx->udf = udf;
     jsize fd_count = (*env)->GetArrayLength(env, fd_array);
@@ -299,6 +398,12 @@ done:
 
 static void free_source(SourceContext *ctx)
 {
+#ifdef MATTMUX_DVDCSS
+    if (ctx->dvdcss) {
+        dvdcss_close(ctx->dvdcss);
+        ctx->dvdcss = NULL;
+    }
+#endif
     for (int i = 0; i < 9; ++i) if (ctx->udf_files[i]) udfread_file_close(ctx->udf_files[i]);
     if (ctx->udf) { ctx->udf->cancelled = NULL; ctx->udf->cancel_opaque = NULL; }
     av_freep(&ctx->fds);

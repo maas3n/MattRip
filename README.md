@@ -4,7 +4,7 @@
 
 MattRip can remux DVD-Video titles to MKV, extract individual streams from DVD or MKV sources, combine selected streams from multiple files, and batch-remux DVD libraries. Windows, Linux, and Android/ChromeOS are developed together from the single `main` branch and use one shared product version.
 
-> Windows and Linux now accept **physical DVD drives** as desktop DVD sources in DVD Remux/Demux, Advanced Merger, and the single-disc CLI. CSS handling is **not included yet**, and Android USB optical-drive support remains a separate milestone.
+> Windows and Linux accept **physical DVD drives** as desktop DVD sources in DVD Remux/Demux, Advanced Merger, and the single-disc CLI. Current development builds package pinned **libdvdcss 1.6.0** for CSS-protected DVD access on Windows/Linux and in direct GitHub/development Android builds. The Google Play AAB stays CSS-free pending separate distribution-policy review, and Android USB optical-drive support remains a separate milestone.
 
 ## Latest stable release: MattRip 1.5.0
 
@@ -28,7 +28,7 @@ For DVD sources, MattRip discovers DVD titles, automatically selects the longest
 
 Choose **Start Remux** to create an MKV using stream copy. Chapter preservation is optional.
 
-Windows and Linux use FFmpeg's `dvdvideo` input backed by `libdvdread`/`libdvdnav`. Android/ChromeOS uses its native FFmpeg/libav, libdvdnav, libdvdread, and libudfread path. MattRip does not use its own DVD IFO parser.
+Windows and Linux use FFmpeg's `dvdvideo` input backed by `libdvdread`/`libdvdnav`. Self-contained desktop builds keep libdvdcss private to MattRip and let libdvdread discover it dynamically; no separate CSS remux engine is introduced. Direct GitHub/development Android builds statically link libdvdcss into the JNI bridge and decrypt scrambled VOB sectors before the existing native FFmpeg/libav stream-copy reader consumes them. The Google Play build keeps CSS disabled for now. MattRip does not use its own DVD IFO parser.
 
 ### Demux
 
@@ -180,7 +180,7 @@ See [`android/README.md`](android/README.md) for Android-specific implementation
 
 ## Important limitations
 
-- Physical DVD-drive access currently handles readable/unencrypted discs through the existing desktop `dvdvideo` stack. CSS-capable access is planned source-layer work and is not included yet.
+- CSS support does not add Android USB optical-drive transport; Android CSS-capable builds currently apply to supported DVD folder/ISO inputs through the existing SAF/UDF path.
 - Interleaved multi-angle DVD titles are unsupported on the current Android path.
 - Still/shuffle/multi-PGC DVD semantics are not fully supported on Android.
 - Android ISO input requires a seekable storage provider.

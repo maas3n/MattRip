@@ -93,6 +93,10 @@ jobs:
 
       - name: Build bundled LGPL FFmpeg runtime
         run: |
+          # Keep the Play-distributed bundle CSS-free until the separate Play
+          # policy/distribution review is completed. Direct GitHub Android
+          # builds exercise the CSS-capable JNI path.
+          MATTRIP_ANDROID_CSS=0 \
           ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}" \
             bash android/native/build-ffmpeg-android.sh
 
@@ -115,6 +119,9 @@ jobs:
           AAB="$(find android/app/build/outputs/bundle/release -name '*.aab' -print -quit)"
           test -n "$AAB"
           python3 android/native/verify-package.py "$AAB"
+          build_info="$(unzip -p "$AAB" base/assets/ffmpeg/ffmpeg-build-info.txt)"
+          grep -q 'CSS support: not included' <<<"$build_info"
+          ! grep -q 'CSS support: libdvdcss' <<<"$build_info"
           jarsigner -verify -certs "$AAB" 2>&1 | tee /tmp/jarsigner.txt
           grep -Fq 'jar verified.' /tmp/jarsigner.txt
           bash scripts/verify-android-signing-cert.sh "$AAB" '${{ vars.ANDROID_UPLOAD_CERT_SHA256 }}'

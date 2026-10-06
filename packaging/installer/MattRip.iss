@@ -38,7 +38,7 @@ Source: "..\..\src\MattRip.exe.manifest"; DestDir: "{app}"; DestName: "MattRip.e
 Source: "..\..\src\MattRip.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\THIRD_PARTY.md"; DestDir: "{app}"; Flags: ignoreversion
 #ifndef ThinSetup
-Source: "bundled-tools\ffmpeg-2026-09-08\*"; DestDir: "{localappdata}\MattRip\tools\ffmpeg-2026-09-08"; Flags: ignoreversion
+Source: "bundled-tools\ffmpeg-2026-09-08\*"; DestDir: "{localappdata}\MattRip\tools\ffmpeg-2026-09-08"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "bundled-tools\mediainfo-26.05\MediaInfo.exe"; DestDir: "{localappdata}\MattRip\tools\mediainfo-26.05"; Flags: ignoreversion
 #endif
 

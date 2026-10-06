@@ -1,0 +1,70 @@
+name: CSS runtime
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/build-libdvdcss.sh'
+      - 'packaging/linux/**'
+      - '.github/workflows/css-runtime.yml'
+      - '.github/workflows/release.yml'
+      - 'src/dvd_css_linux.go'
+      - 'src/dvd_css_linux_test.go'
+      - 'src/linux_core.go'
+      - 'android/native/dvdcss_stream.h'
+      - 'android/native/mattmux_jni.c'
+      - 'android/native/tests/dvdcss_stream_test.c'
+      - 'android/native/tests/test-dvdcss-stream.sh'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux-libdvdcss:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y meson ninja-build curl xz-utils
+      - name: Build pinned libdvdcss
+        run: |
+          set -euo pipefail
+          prefix="$RUNNER_TEMP/libdvdcss"
+          LIBDVDCSS_PREFIX="$prefix" bash scripts/build-libdvdcss.sh
+          test -e "$prefix/lib/libdvdcss.so.2"
+          test -s "$prefix/share/mattrip/libdvdcss/libdvdcss-1.6.0-source.tar.xz"
+          readlink -f "$prefix/lib/libdvdcss.so.2"
+          sha256sum "$prefix/share/mattrip/libdvdcss/libdvdcss-1.6.0-source.tar.xz"
+      - name: Test Android stream callbacks against host libdvdcss with sanitizers
+        run: bash android/native/tests/test-dvdcss-stream.sh "$RUNNER_TEMP/libdvdcss" "$RUNNER_TEMP/css-callbacks"
+
+  windows-libdvdcss:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up MSYS2 MinGW64
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            coreutils
+            curl
+            file
+            tar
+            xz
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-meson
+            mingw-w64-x86_64-ninja
+      - name: Build pinned libdvdcss
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          prefix="$RUNNER_TEMP/libdvdcss"
+          LIBDVDCSS_PREFIX="$prefix" bash scripts/build-libdvdcss.sh
+          dll="$(find "$prefix" -type f -iname 'libdvdcss*.dll' -print -quit)"
+          test -n "$dll"
+          test -s "$prefix/share/mattrip/libdvdcss/libdvdcss-1.6.0-source.tar.xz"
+          file "$dll"

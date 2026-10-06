@@ -20,6 +20,7 @@ FFMPEG_TAG="autobuild-2026-09-08-23-15"
 FFMPEG_ASSET="ffmpeg-N-126479-g08cd8df29d-linux64-gpl.tar.xz"
 FFMPEG_SHA256="635a2d74de852064852e95db5a9c475a86d36e2b6390e3c1ba5e46b2c46dfce0"
 FFMPEG_URL="https://github.com/BtbN/FFmpeg-Builds/releases/download/$FFMPEG_TAG/$FFMPEG_ASSET"
+LIBDVDCSS_VERSION="1.6.0"
 
 # MediaInfo's static CMake build normally auto-fetches these repositories from
 # their moving master branches. Pin every checkout so rebuilding this release
@@ -36,7 +37,7 @@ ZLIB_COMMIT="eaaf237c8cbc7310170c43202c6ec2cff64fff66"
 
 if [[ "$(uname -s)" != "Linux" ]]; then echo "This packaging script must run on Linux." >&2; exit 1; fi
 if [[ "$(uname -m)" != "x86_64" ]]; then echo "The bundled toolchain is currently pinned for amd64/x86_64 only." >&2; exit 1; fi
-for cmd in go git tar dpkg-deb sha256sum curl cmake ninja; do command -v "$cmd" >/dev/null 2>&1 || { echo "Missing build tool: $cmd" >&2; exit 1; }; done
+for cmd in go git tar dpkg-deb sha256sum curl cmake ninja meson; do command -v "$cmd" >/dev/null 2>&1 || { echo "Missing build tool: $cmd" >&2; exit 1; }; done
 
 checkout_exact() {
   local repo="$1" commit="$2" dst="$3" label="$4"
@@ -82,9 +83,10 @@ MediaInfo is optional for the portable archive.
 For a one-file installer with all required multimedia tools included, use the
 MattRip .deb package. Its private tools never replace system multimedia tools.
 
-MattRip does not bypass DVD copy protection such as CSS.
+CSS-protected DVD access is supported through the bundled libdvdcss runtime.
+MattRip keeps libdvdcss private to its DVD tools and does not install it system-wide.
+Use this functionality only where you are legally permitted to access the disc.
 TXT
-tar -C "$WORK" -czf "$DIST/MattRip-$APP_VERSION-Linux-amd64.tar.gz" "$(basename "$PORTABLE")"
 
 # Download and verify the exact GPL FFmpeg build used inside the self-contained
 # .deb. dvdvideo requires a GPL-enabled FFmpeg build with libdvdnav/read.
@@ -110,6 +112,23 @@ BUNDLED_FFMPEG="$(find "$FF_EXTRACT" -type f -name ffmpeg -perm -u+x | head -n1)
 BUNDLED_FFPROBE="$(find "$FF_EXTRACT" -type f -name ffprobe -perm -u+x | head -n1)"
 [[ -n "$BUNDLED_FFMPEG" && -n "$BUNDLED_FFPROBE" ]] || { echo "FFmpeg archive did not contain ffmpeg/ffprobe" >&2; exit 1; }
 "$BUNDLED_FFMPEG" -hide_banner -demuxers 2>/dev/null | grep -q 'dvdvideo' || { echo "Pinned FFmpeg lacks dvdvideo demuxer" >&2; exit 1; }
+
+# Build the current pinned libdvdcss as a private shared runtime. libdvdread
+# discovers it dynamically, so MattRip keeps the existing dvdvideo pipeline.
+LIBDVDCSS_PREFIX="$WORK/tools/libdvdcss-install"
+LIBDVDCSS_WORK="$WORK/tools/libdvdcss-build"
+LIBDVDCSS_PREFIX="$LIBDVDCSS_PREFIX" LIBDVDCSS_WORK="$LIBDVDCSS_WORK" \
+  bash "$ROOT/scripts/build-libdvdcss.sh"
+test -e "$LIBDVDCSS_PREFIX/lib/libdvdcss.so.2" || { echo "Pinned libdvdcss runtime is missing" >&2; exit 1; }
+
+# The portable archive carries the same private runtime beside the MattRip
+# binaries. src/dvd_css_linux.go exposes that directory only to child media tools.
+cp -a "$LIBDVDCSS_PREFIX"/lib/libdvdcss.so* "$PORTABLE/"
+mkdir -p "$PORTABLE/licenses/libdvdcss"
+cp "$LIBDVDCSS_PREFIX/share/mattrip/libdvdcss/COPYING" "$PORTABLE/licenses/libdvdcss/"
+cp "$LIBDVDCSS_PREFIX/share/mattrip/libdvdcss/BUILD-INFO.txt" "$PORTABLE/licenses/libdvdcss/"
+cp "$LIBDVDCSS_PREFIX/share/mattrip/libdvdcss/libdvdcss-$LIBDVDCSS_VERSION-source.tar.xz" "$PORTABLE/licenses/libdvdcss/"
+tar -C "$WORK" -czf "$DIST/MattRip-$APP_VERSION-Linux-amd64.tar.gz" "$(basename "$PORTABLE")"
 
 # Build MediaInfo with all four source repositories pinned to exact commits.
 # Pre-populating the directories prevents CMake FetchContent from following
@@ -157,6 +176,7 @@ install -m 0755 "$WORK/bin/mattrip-cli-bin" "$DEBROOT/usr/lib/mattrip/app/mattri
 install -m 0755 "$BUNDLED_FFMPEG" "$DEBROOT/usr/lib/mattrip/ffmpeg-bin/ffmpeg"
 install -m 0755 "$BUNDLED_FFPROBE" "$DEBROOT/usr/lib/mattrip/ffmpeg-bin/ffprobe"
 install -m 0755 "$BUNDLED_MEDIAINFO" "$DEBROOT/usr/lib/mattrip/mediainfo-bin/mediainfo"
+cp -a "$LIBDVDCSS_PREFIX"/lib/libdvdcss.so* "$DEBROOT/usr/lib/mattrip/ffmpeg-bin/"
 
 # These launchers modify PATH only for the MattRip child process. They do not
 # write to /etc/environment, shell profiles, alternatives, or any system PATH
@@ -168,7 +188,8 @@ set -eu
 FFDIR=/usr/lib/mattrip/ffmpeg-bin
 MIDIR=/usr/lib/mattrip/mediainfo-bin
 PATH="$FFDIR:$MIDIR:$PATH"
-export PATH
+LD_LIBRARY_PATH="$FFDIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export PATH LD_LIBRARY_PATH
 exec /usr/lib/mattrip/app/mattrip-bin "$@"
 LAUNCHER
 chmod 0755 "$DEBROOT/usr/bin/mattrip"
@@ -179,7 +200,8 @@ set -eu
 FFDIR=/usr/lib/mattrip/ffmpeg-bin
 MIDIR=/usr/lib/mattrip/mediainfo-bin
 PATH="$FFDIR:$MIDIR:$PATH"
-export PATH
+LD_LIBRARY_PATH="$FFDIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export PATH LD_LIBRARY_PATH
 exec /usr/lib/mattrip/app/mattrip-cli-bin "$@"
 LAUNCHER
 chmod 0755 "$DEBROOT/usr/bin/mattrip-cli"
@@ -259,6 +281,17 @@ The bundled build is GPL-enabled because FFmpeg's dvdvideo demuxer requires
 libdvdnav and libdvdread with GPL support. See FFmpeg and the build provider for
 the applicable copyright notices, license texts, build configuration and source.
 
+libdvdcss
+---------
+Version: $LIBDVDCSS_VERSION
+Source: https://download.videolan.org/libdvdcss/$LIBDVDCSS_VERSION/libdvdcss-$LIBDVDCSS_VERSION.tar.xz
+Source SHA-256: 7ea556c846b7bfc32d47b41cae56d1863a6b6d5f706bb162778d6f298490977c
+License: GPL-2.0-or-later (see libdvdcss-COPYING in this directory).
+
+MattRip builds libdvdcss from the pinned upstream source and keeps the resulting
+shared library private to MattRip. libdvdread loads it dynamically for
+CSS-protected DVD access.
+
 MediaInfo
 ---------
 Version/tag: $MEDIAINFO_TAG
@@ -273,6 +306,9 @@ MattRip keeps these programs private under /usr/lib/mattrip and does not claim
 them as part of MattRip itself.
 TXT
 install -m 0644 "$MI_SRC/LICENSE" "$DEBROOT/usr/share/doc/mattrip/MediaInfo-LICENSE"
+install -m 0644 "$LIBDVDCSS_PREFIX/share/mattrip/libdvdcss/COPYING" "$DEBROOT/usr/share/doc/mattrip/libdvdcss-COPYING"
+install -m 0644 "$LIBDVDCSS_PREFIX/share/mattrip/libdvdcss/BUILD-INFO.txt" "$DEBROOT/usr/share/doc/mattrip/libdvdcss-BUILD-INFO.txt"
+install -m 0644 "$LIBDVDCSS_PREFIX/share/mattrip/libdvdcss/libdvdcss-$LIBDVDCSS_VERSION-source.tar.xz" "$DEBROOT/usr/share/doc/mattrip/libdvdcss-$LIBDVDCSS_VERSION-source.tar.xz"
 
 # Preserve any FFmpeg license/readme text distributed in the pinned build.
 FF_LICENSE="$(find "$FF_EXTRACT" -type f \( -iname 'license*' -o -iname 'copying*' \) | head -n1 || true)"

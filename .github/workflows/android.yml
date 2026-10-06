@@ -62,7 +62,7 @@ jobs:
       - name: Install Android platform and native toolchain
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build binutils curl patchelf xz-utils autoconf automake libtool pkg-config ffmpeg dvdauthor genisoimage libavformat-dev libavcodec-dev libavutil-dev
+          sudo apt-get install -y cmake meson ninja-build binutils curl patchelf xz-utils autoconf automake libtool pkg-config ffmpeg dvdauthor genisoimage libavformat-dev libavcodec-dev libavutil-dev
           sdkmanager \
             'platforms;android-36' \
             'build-tools;36.0.0' \
@@ -86,6 +86,10 @@ jobs:
           python3 -m pip install pycdlib==1.14.0
           bash android/native/tests/test-udf-source.sh "$PWD/android/native/.work/libudfread"
           bash android/native/tests/test-host-remux.sh "$PWD/android/native/.work/libudfread" "$RUNNER_TEMP/remux-parity"
+          LIBDVDCSS_PREFIX="$RUNNER_TEMP/host-libdvdcss" \
+            LIBDVDCSS_WORK="$RUNNER_TEMP/host-libdvdcss-work" bash scripts/build-libdvdcss.sh
+          CSS_LIBDVDCSS_PREFIX="$RUNNER_TEMP/host-libdvdcss" \
+            bash android/native/tests/test-host-remux.sh "$PWD/android/native/.work/libudfread" "$RUNNER_TEMP/remux-parity-css"
           bash android/native/tests/test-title-selection.sh "$PWD/android/native/.work" "$RUNNER_TEMP/title-selection"
 
       - name: Upload remux parity diagnostics
@@ -126,8 +130,9 @@ jobs:
 
           python3 android/native/verify-package.py "${APK}" "${AAB}"
 
-          unzip -p "${APK}" assets/ffmpeg/ffmpeg-build-info.txt \
-            | grep -q 'FFmpeg version: 9.0.1'
+          build_info="$(unzip -p "${APK}" assets/ffmpeg/ffmpeg-build-info.txt)"
+          grep -q 'FFmpeg version: 9.0.1' <<<"${build_info}"
+          grep -q 'CSS support: libdvdcss 1.6.0' <<<"${build_info}"
 
           "${ANDROID_HOME}/build-tools/36.0.0/zipalign" \
             -c -P 16 -v 4 "${APK}"

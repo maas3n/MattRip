@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Correct Android libdvdcss stream callbacks to use byte offsets/counts and zero-on-success seeking; add sanitizer contract tests and CSS-enabled native remux parity coverage.
+- Add pinned libdvdcss 1.6.0 build/provenance and private Windows/Linux release runtimes for CSS-protected DVD access through the existing FFmpeg dvdvideo + libdvdread path.
+- Keep Linux libdvdcss search paths scoped to MattRip child media tools and add cross-platform CI that builds the pinned runtime independently of Android production signing.
+- Add optional Android libdvdcss sector decryption to the existing SAF/UDF native reader for direct GitHub/development builds; preserve the existing title/cell/chapter and libav stream-copy paths.
+- Keep the Google Play AAB CSS-free with `MATTRIP_ANDROID_CSS=0` pending a separate Play distribution-policy review; Android USB optical-drive transport remains out of scope.
+
 - Separate Android app-signing and Play upload identities so direct GitHub APKs and Play AAB uploads no longer reuse one key role.
 - Pin the expected SHA-256 certificate for each Android signing identity and verify the final APK/AAB certificate before publication.
 - Add protected `android-release` / `android-play` signing environments, a lightweight signing self-test workflow, throwaway-key CI regressions, safe key-generation tooling, and release-signing documentation.
