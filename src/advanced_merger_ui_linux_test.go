@@ -33,20 +33,22 @@ func TestAdvancedMergerAndBatchTabs(t *testing.T) {
 		t.Fatal("missing BATCH tab")
 	}
 
-	var movieFiles, dvdDrive, audioStreams, subtitleStreams, demux bool
+	var media, dvdDrive, audioStreams, subtitleStreams, chapterFile, demux bool
 	var activity *widget.ProgressBarInfinite
 	walkLinuxCanvas(tabs.Items[1].Content, func(obj fyne.CanvasObject) {
 		switch o := obj.(type) {
 		case *widget.Button:
 			switch o.Text {
-			case "MOVIE FILES":
-				movieFiles = true
+			case "MEDIA(All streams included)":
+				media = true
 			case "DVD DRIVE":
 				dvdDrive = true
-			case "AUDIO / MKV / RAW":
+			case "ADD AUDIO(Only audio streams will be included)":
 				audioStreams = true
-			case "SUBTITLE / MKV / RAW":
+			case "ADD SUBTITLE(Only subtitle streams will be Included)":
 				subtitleStreams = true
+			case "ADD CHAPTER .txt FILE(FFMETADATA1 Format)":
+				chapterFile = true
 			case "DEMUX":
 				demux = true
 			}
@@ -54,7 +56,7 @@ func TestAdvancedMergerAndBatchTabs(t *testing.T) {
 			activity = o
 		}
 	})
-	if !movieFiles || !dvdDrive || !audioStreams || !subtitleStreams {
+	if !media || !dvdDrive || !audioStreams || !subtitleStreams || !chapterFile {
 		t.Fatal("Advanced Merger source buttons are incomplete")
 	}
 	if !demux {
