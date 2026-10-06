@@ -61,7 +61,7 @@ class AdvancedMergerPanel(private val activity: Activity) {
         content.addView(outputLabel)
         content.addView(filename); controls += filename
         button("DEMUX") { chooseDemux() }
-        button("MUX TO MKV") { mux() }
+        button("MUX") { mux() }
         content.addView(cancelButton)
         content.addView(status)
         view = ScrollView(activity).apply { addView(content) }
