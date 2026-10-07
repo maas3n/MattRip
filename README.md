@@ -15,7 +15,7 @@ Release downloads and checksums are published together on the [MattRip 1.5.0 rel
 
 ## Download the current GitHub builds
 
-These links stay the same when a new MattRip release is published. The release workflow refreshes the rolling **main downloads** with artifacts built from the newly published release, so the README does not need version-specific download URLs.
+These links stay the same while their files follow the current `main` branch. Every successful release-grade `main` build refreshes the rolling **main downloads**, so merges do not require version-specific README URLs.
 
 ### Windows All-in-One
 
@@ -55,7 +55,7 @@ curl -L --fail -o MattRip-Android.apk https://github.com/maas3n/MattRip/releases
 wget -O MattRip-Android.apk https://github.com/maas3n/MattRip/releases/download/main-downloads/MattRip-Android.apk
 ```
 
-> The rolling links follow the most recently **published GitHub release** (including prereleases). Numbered release assets remain immutable.
+> The rolling links follow successful release-grade builds of **`main`**. Numbered release assets remain immutable and are published separately.
 
 ## What MattRip can do
 
@@ -234,7 +234,7 @@ See [`android/README.md`](android/README.md) for Android-specific implementation
 
 ## Quick start
 
-There are no public MattRip binaries yet. Build MattRip from source using the platform instructions below while the fork is in development. Published MattMux 1.4.19 binaries remain MattMux artifacts and are not relabeled as MattRip.
+Use the rolling `main` downloads above for the current Windows All-in-One, Linux Standalone, and Android/ChromeOS APK builds. Numbered MattRip releases remain available from the GitHub Releases page, while the build-from-source instructions below track `main`.
 
 ## Build from source
 
