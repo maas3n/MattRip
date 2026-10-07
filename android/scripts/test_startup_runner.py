@@ -28,6 +28,62 @@ class RecoveryTests(unittest.TestCase):
                         'Unexpected ANR dialog instead of MattRip tab']:
             self.assertFalse(runner.retryable_system_crash('557', '890', CRASH + failure))
 
+    def test_page_size_uses_getconf_when_available(self):
+        with patch.object(runner, 'adb', return_value='16384') as adb:
+            self.assertEqual(runner.page_size_bytes(), 16384)
+        adb.assert_called_once_with('shell', 'getconf', 'PAGE_SIZE')
+
+    def test_page_size_falls_back_to_smaps_when_getconf_is_missing(self):
+        missing = subprocess.CalledProcessError(127, ['adb', 'shell', 'getconf', 'PAGE_SIZE'])
+        with patch.object(runner, 'adb', side_effect=[missing, 'Size: 12 kB\nKernelPageSize:        4 kB\n']):
+            self.assertEqual(runner.page_size_bytes(), 4096)
+
+    def test_api26_readiness_survives_missing_getconf_and_writes_diagnostics(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        diagnostics = Path(temporary.name) / 'readiness.txt'
+
+        def fake_adb(*args):
+            if args == ('shell', 'getprop', 'sys.boot_completed'):
+                return '1'
+            if args == ('shell', 'pm', 'path', 'android'):
+                return 'package:/system/framework/framework-res.apk'
+            if args == ('shell', 'getconf', 'PAGE_SIZE'):
+                raise subprocess.CalledProcessError(127, args)
+            if args == ('shell', 'cat', '/proc/self/smaps'):
+                return 'KernelPageSize:        4 kB\n'
+            raise AssertionError(args)
+
+        with patch.object(runner, 'system_pid', return_value='557'), \
+             patch.object(runner, 'adb', side_effect=fake_adb), \
+             patch.object(runner.time, 'monotonic', side_effect=[0, 1, 2, 3, 4, 5, 6]), \
+             patch.object(runner.time, 'sleep'):
+            self.assertEqual(runner.wait_ready(4096, diagnostics), '557')
+
+        text = diagnostics.read_text()
+        self.assertIn('stable=5', text)
+        self.assertIn('page_size=4096 expected=4096', text)
+
+    def test_page_size_mismatch_is_reported_directly(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        diagnostics = Path(temporary.name) / 'readiness.txt'
+
+        def fake_adb(*args):
+            if args == ('shell', 'getprop', 'sys.boot_completed'):
+                return '1'
+            if args == ('shell', 'pm', 'path', 'android'):
+                return 'package:/system/framework/framework-res.apk'
+            raise AssertionError(args)
+
+        with patch.object(runner, 'system_pid', return_value='557'), \
+             patch.object(runner, 'adb', side_effect=fake_adb), \
+             patch.object(runner, 'page_size_bytes', return_value=16384), \
+             patch.object(runner.time, 'monotonic', side_effect=[0, 1, 2, 3, 4, 5, 6]), \
+             patch.object(runner.time, 'sleep'):
+            with self.assertRaisesRegex(RuntimeError, 'Expected 4096-byte pages, got 16384'):
+                runner.wait_ready(4096, diagnostics)
+
     def exercise(self, results):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
