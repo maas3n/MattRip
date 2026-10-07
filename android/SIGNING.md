@@ -127,3 +127,25 @@ Do not replace keys silently.
 
 - If the **Play upload key** is lost or compromised, use Play Console's upload-key reset process and intentionally update the `android-play` secrets plus `ANDROID_UPLOAD_CERT_SHA256`.
 - If the **app-signing key** is affected, treat it as a release-security incident. Direct GitHub APK update continuity depends on that identity, and Play signing-key changes must follow Google's supported key-upgrade process.
+
+## Main downloads and upgrade numbering
+
+The unified workflow checks the `android-release` signing settings before any
+platform build. If it reports missing settings, restore the **existing**
+app-signing keystore and passwords listed above, and configure the matching
+`ANDROID_APP_SIGNING_CERT_SHA256` variable. Do not generate a replacement key
+for an already distributed app. Then dispatch **Unified release** on `main`
+with an empty tag. The workflow never publishes an unsigned fallback.
+
+Both numbered releases and main snapshots now use Android version code
+`1000000000 + GITHUB_RUN_NUMBER` from the **same Unified release workflow**.
+This migration is above the previously published 1.5/1.6 codes and allows
+upgrades in either channel as new runs are published. Do not reset this counter
+or restore the former semantic-version formula. Rerunning a workflow retains
+its version code. Play bundles must use the corresponding GitHub APK's version
+code; do not allocate an independent higher sequence in the Play workflow.
+
+Main snapshots are staged as drafts with complete assets and verified remote
+SHA-256 digests. Only then are they published as GitHub's Latest release. Numbered
+releases explicitly leave Latest unchanged. A failed staging attempt may leave
+a private draft; rerunning uses a new attempt tag without altering public files.
