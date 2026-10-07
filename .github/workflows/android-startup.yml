@@ -36,6 +36,8 @@ jobs:
         with:
           name: ${{ inputs.artifact }}
           path: startup-apk
+      - name: Test startup UI recognition
+        run: python3 -m unittest discover -s android/scripts -p test_startup_ui.py -v
       - name: Enable emulator acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules

@@ -2,6 +2,7 @@
 """Install and actually launch a built APK on the connected CI emulator."""
 from pathlib import Path
 import re
+from startup_ui import center_of, find_tab, foreground_anr_title, pixel_launcher_anr_close_button
 import subprocess
 import sys
 import time
@@ -38,14 +39,34 @@ try:
         raise RuntimeError("MattRip exited after launch")
     for label in ("REMUX/DEMUX", "ADVANCED", "BATCH", "CLI"):
         safe_label = re.sub(r"[^A-Za-z0-9._-]+", "-", label).strip("-")
-        tree = screen("before-" + safe_label)
-        node = next((n for n in tree.iter("node") if n.get("text", "").casefold() == label.casefold()), None)
-        if node is None:
-            raise RuntimeError(f"Missing tab after launch: {label}")
-        x1, y1, x2, y2 = map(int, re.findall(r"\d+", node.attrib["bounds"]))
-        adb("shell", "input", "tap", str((x1 + x2) // 2), str((y1 + y2) // 2))
+        # The 16 KB emulator has occasionally crashed system_server on cold
+        # boot, leaving a Pixel Launcher ANR dialog over a *healthy* MattRip.
+        # Only clear this known external dialog; do not bypass app failures.
+        for attempt in range(12):
+            if not adb("shell", "pidof", package).strip():
+                raise RuntimeError(f"MattRip exited while looking for tab: {label}")
+            tree = screen(f"before-{safe_label}-{attempt}")
+            node = find_tab(tree, label)
+            if node is not None:
+                break
+            title = foreground_anr_title(tree)
+            if title is not None:
+                close = pixel_launcher_anr_close_button(tree)
+                if close is None:
+                    raise RuntimeError(f"Unexpected ANR dialog instead of MattRip tab {label}: {title}")
+                print("Closing unrelated Pixel Launcher ANR over MattRip", flush=True)
+                x, y = center_of(close)
+                adb("shell", "input", "tap", str(x), str(y))
+            else:
+                print(f"Waiting for MattRip tab {label} ({attempt + 1}/12)", flush=True)
+            time.sleep(2)
+        else:
+            raise RuntimeError(f"Missing tab after launch: {label} (after 12 UI checks)")
+        x, y = center_of(node)
+        adb("shell", "input", "tap", str(x), str(y))
         time.sleep(1)
-        adb("shell", "pidof", package)
+        if not adb("shell", "pidof", package).strip():
+            raise RuntimeError(f"MattRip exited after opening tab: {label}")
     screen("final")
     print("APK installed, activity stayed alive, and all four tabs opened.")
     if "DemuxSmokeInstrumentation" in adb("shell", "pm", "list", "instrumentation"):
