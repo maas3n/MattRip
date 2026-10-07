@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Android ADVANCED now scans DVD folder/ISO streams and chapters without preparing an MKV. DEMUX reads the original DVD directly; temporary DVD MKVs are created only for MUX, with stream-index validation and cleanup on staging failure. Windows/Linux retain their shared direct-DVD MUX/DEMUX paths.
+
 - Simplify the main UI labels across Windows, Linux, Android and ChromeOS: rename the media tabs to **REMUX/DEMUX** and **ADVANCED**, combine desktop **Scan Titles** / **Show Metadata** into **SCAN/SELECT STREAMS**, rename the primary actions to **REMUX**, **DEMUX**, **MUX**, and **BATCH REMUX**, refresh Advanced source labels, and let MEDIA add DVD VIDEO_TS folders and DVD ISO images alongside ordinary media.
 
 - Correct Android libdvdcss stream callbacks to use byte offsets/counts and zero-on-success seeking; add sanitizer contract tests and CSS-enabled native remux parity coverage.

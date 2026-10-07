@@ -223,7 +223,7 @@ class AndroidNativeRemuxEngine : RemuxEngine {
     /** Extract the planned DVD cells directly to elementary/VOB outputs. */
     internal fun demuxTitleToDirectory(
         context: Context, sourceUri: Uri, directory: File, indexes: IntArray?,
-        chapters: Boolean, vob: Boolean, progress: (Int) -> Unit,
+        chapters: Boolean, vob: Boolean, requestedTitle: Int? = null, progress: (Int) -> Unit,
     ) {
         check(isAvailable) { unavailableReason ?: "Remux engine unavailable" }
         require(indexes == null || indexes.isNotEmpty()) { "Select at least one track" }
@@ -231,7 +231,7 @@ class AndroidNativeRemuxEngine : RemuxEngine {
         try {
             stagingProgressListener = progress
             check(!cancelled.get()) { "Demux cancelled" }
-            openTitle(context, sourceUri).use { title ->
+            openTitle(context, sourceUri, requestedTitle).use { title ->
                 check(!cancelled.get()) { "Demux cancelled" }
                 nativeDemux(
                     IntArray(title.vobs.size) { title.vobs[it].fd },

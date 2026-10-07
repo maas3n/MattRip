@@ -16,7 +16,7 @@ import android.widget.TextView
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** Uses private temporary files so all demuxers can seek and resolve subtitle sidecars. */
+/** Ordinary files use seekable copies; DVD DEMUX reads the original source directly. */
 class AdvancedMergerPanel(private val activity: Activity) {
     companion object {
         const val FIRST_REQUEST = 8100
@@ -29,7 +29,7 @@ class AdvancedMergerPanel(private val activity: Activity) {
     private val sources = linkedMapOf<Uri, File>()
     private data class Selection(val file: File, val track: TrackInfo, val check: CheckBox, val demuxIndex: Int = track.index)
     private data class Candidate(val file: File, val track: TrackInfo, val demuxIndex: Int)
-    private data class DvdSource(val uri: Uri, val title: Int, val tracks: List<TrackInfo>)
+    private data class DvdSource(val uri: Uri, val input: AdvancedDvdInput)
     private val selections = mutableListOf<Selection>()
     private val dvdSources = mutableMapOf<File, DvdSource>()
     private var chapters: File? = null
@@ -108,7 +108,7 @@ class AdvancedMergerPanel(private val activity: Activity) {
         val movieFolder = request == MEDIA_FOLDER_REQUEST
         val kind = if (movieFolder) 0 else request - FIRST_REQUEST
         run("Preparing inputs…") {
-            // Copy ordinary inputs before probing. DVD folder/ISO inputs are losslessly staged through the native DVD engine first.
+            // Copy ordinary files, but only read metadata for DVDs. Their MKV is deferred until MUX.
             val files = uris.map { uri -> sources[uri] ?: prepareInput(uri, kind, movieFolder).also { sources[uri] = it } }
             if (kind == 3) {
                 val file = files.single()
@@ -120,18 +120,10 @@ class AdvancedMergerPanel(private val activity: Activity) {
                 // A VobSub .sub is data for the matching .idx, not another selectable subtitle source.
                 if (kind == 2 && file.extension.equals("sub", true) && files.any { it.nameWithoutExtension == file.nameWithoutExtension && it.extension.equals("idx", true) }) emptyList()
                 else {
-                    val allTracks = native.probe(file.absolutePath).map(::parseTrack)
+                    val allTracks = dvdSources[file]?.input?.tracks ?: native.probe(file.absolutePath).map(::parseTrack)
                     val tracks = allTracks.filter { type == null || it.kind == type }
                     require(tracks.isNotEmpty()) { "${file.name} contains no ${type ?: "streams"}" }
-                    val dvd = dvdSources[file]
-                    val directIndexes = if (dvd == null) emptyMap() else {
-                        val stagedMedia = allTracks.filter { it.kind in setOf("video", "audio", "subtitle") }
-                        require(dvd.tracks.size == stagedMedia.size && dvd.tracks.zip(stagedMedia).all { (original, staged) ->
-                            original.kind == staged.kind && original.codec == staged.codec
-                        }) { "DVD stream mapping changed while staging ${file.name}" }
-                        stagedMedia.zip(dvd.tracks).associate { (staged, original) -> staged.index to original.index }
-                    }
-                    tracks.map { Candidate(file, it, directIndexes[it.index] ?: it.index) }
+                    tracks.map { Candidate(file, it, it.index) }
                 }
             }
             return@run {
@@ -154,14 +146,14 @@ class AdvancedMergerPanel(private val activity: Activity) {
             check(dvdEngine.isAvailable) { dvdEngine.unavailableReason ?: "Native DVD engine unavailable" }
             val stem = if (name.endsWith(".iso", ignoreCase = true)) name.dropLast(4) else name
             val safeStem = stem.trim().ifBlank { "DVD" }.replace(Regex("[^A-Za-z0-9._ -]"), "_")
-            val staged = File(root, "$safeStem-dvd-title.mkv")
-            require(!staged.exists()) { "Two movie inputs resolve to the same staged DVD title name: ${staged.name}" }
-            activity.runOnUiThread { status.text = "Reading DVD source and staging the longest title for MUX: $name" }
-            val direct = dvdEngine.probeTracks(activity, uri)
-            val title = dvdEngine.remuxTitleToFile(activity, uri, staged, requestedTitle = direct.title, preserveChapters = true)
-            check(title == direct.title) { "DVD title changed while staging" }
-            dvdSources[staged] = DvdSource(uri, title, direct.tracks)
-            activity.runOnUiThread { status.text = "DVD title $title ready for MUX and direct DEMUX" }
+            // A unique, uncreated path identifies the DVD in the existing selection model.
+            // No movie bytes are copied until the user requests MUX.
+            val staged = File(root, "dvd-${sources.size}/$safeStem-dvd-title.mkv")
+            activity.runOnUiThread { status.text = "Reading DVD title and streams: $name" }
+            check(!native.cancelled.get()) { "Cancelled" }
+            val metadata = dvdEngine.probeTitleMetadata(activity, uri, null)
+            check(!native.cancelled.get()) { "Cancelled" }
+            dvdSources[staged] = DvdSource(uri, AdvancedDvdInput(staged, metadata))
             return staged
         }
         return copyInput(uri, name)
@@ -254,6 +246,7 @@ class AdvancedMergerPanel(private val activity: Activity) {
                             dvdEngine.demuxTitleToDirectory(
                                 activity, dvd.uri, temporary,
                                 media.map { it.demuxIndex }.toIntArray(), includeChapters, vob,
+                                requestedTitle = dvd.input.metadata.title,
                             ) { percent ->
                                 activity.runOnUiThread {
                                     if (!destroyed) status.text = "Demuxing ${file.name} directly from DVD… $percent%"
@@ -327,12 +320,37 @@ class AdvancedMergerPanel(private val activity: Activity) {
             AlertDialog.Builder(activity).setMessage("Select only one movie chapter set, or choose a chapter file to override them.").setPositiveButton("OK", null).show(); return
         }
         val inputs = media.map { it.file }.distinct()
-        val chapter = chapters?.absolutePath ?: selectedChapterFiles.singleOrNull()?.absolutePath
+        val chapterFile = chapters ?: selectedChapterFiles.singleOrNull()
+        val chapter = chapterFile?.absolutePath
         run("Muxing selected streams…") {
             val temporary = File.createTempFile("merged-", ".mkv", root)
             var destination: Uri? = null
             try {
-                native.mux(inputs.map { it.absolutePath }.toTypedArray(), media.map { inputs.indexOf(it.file) }.toIntArray(), media.map { it.track.index }.toIntArray(), chapter, temporary.absolutePath)?.let { error(it) }
+                val dvdIndexes = linkedMapOf<File, Map<Int, Int>>()
+                // Include a DVD used only for chapters, even when all its media is unchecked.
+                for (file in (inputs + listOfNotNull(chapterFile)).distinct()) {
+                    check(!native.cancelled.get()) { "Cancelled" }
+                    val dvd = dvdSources[file] ?: continue
+                    activity.runOnUiThread { if (!destroyed) status.text = "Preparing DVD title for MUX: ${file.name}" }
+                    dvdIndexes[file] = dvd.input.prepareForMux(
+                        stage = {
+                            dvdEngine.remuxTitleToFile(
+                                activity, dvd.uri, file, requestedTitle = dvd.input.metadata.title,
+                                preserveChapters = true,
+                            ) { percent ->
+                                activity.runOnUiThread { if (!destroyed) status.text = "Preparing ${file.name} for MUX… $percent%" }
+                            }
+                        },
+                        probe = { native.probe(file.absolutePath).map(::parseTrack) },
+                        cancelled = { native.cancelled.get() || destroyed },
+                    )
+                }
+                check(!native.cancelled.get()) { "Cancelled" }
+                val indexes = media.map { selection ->
+                    dvdIndexes[selection.file]?.let { it.getValue(selection.track.index) } ?: selection.track.index
+                }.toIntArray()
+                activity.runOnUiThread { if (!destroyed) status.text = "Muxing selected streams…" }
+                native.mux(inputs.map { it.absolutePath }.toTypedArray(), media.map { inputs.indexOf(it.file) }.toIntArray(), indexes, chapter, temporary.absolutePath)?.let { error(it) }
                 check(!native.cancelled.get()) { "Cancelled" }
                 val parent = DocumentsContract.buildDocumentUriUsingTree(folder, DocumentsContract.getTreeDocumentId(folder))
                 // createDocument creates a new document; it never opens an existing movie for replacement.
