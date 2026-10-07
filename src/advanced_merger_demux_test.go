@@ -31,6 +31,23 @@ func TestAdvancedMergerDemuxInputPolicy(t *testing.T) {
 	}
 }
 
+// Both desktop UIs use this shared input builder. Preserve the original DVD
+// source/title for probing and extraction rather than introducing an MKV stage.
+func TestAdvancedMergerDemuxOpensOriginalDVDSource(t *testing.T) {
+	for _, source := range []string{"disc.iso", "/movies/Film/VIDEO_TS", "/dev/sr0", "D:"} {
+		for _, copyTS := range []bool{false, true} {
+			args := appendMergerDemuxInput(nil, source, 3, copyTS)
+			if len(args) < 2 || args[len(args)-2] != "-i" || args[len(args)-1] != source {
+				t.Fatalf("demux must open original source %q: %q", source, args)
+			}
+			joined := strings.Join(args, " ")
+			if strings.Contains(joined, ".mkv") || !strings.Contains(joined, "-f dvdvideo -title 3") {
+				t.Fatalf("demux must use dvdvideo directly: %q", args)
+			}
+		}
+	}
+}
+
 func TestAdvancedMergerDemuxSelectedStreams(t *testing.T) {
 	ffmpeg, err := exec.LookPath("ffmpeg")
 	if err != nil {

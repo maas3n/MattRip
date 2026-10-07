@@ -42,9 +42,11 @@ Existing output files are not overwritten. Cancel stops the active probe/copy/mu
 
 ## Android / ChromeOS temporary storage
 
-Android's Storage Access Framework does not guarantee a normal seekable filesystem path for every selected document. MattRip therefore stages selected Advanced Merger inputs in private temporary storage and creates the output there before copying the completed MKV to the chosen destination.
+Android's Storage Access Framework does not guarantee a normal seekable filesystem path for every selected document. Ordinary media inputs are copied to private temporary storage. DVD folder/ISO inputs are scanned directly for streams and chapters; adding a DVD does not create an intermediate MKV.
 
-The device needs enough free temporary space for the selected input copies plus the in-progress output. Temporary merger data is cleaned up when the panel is destroyed or an operation completes. The tab container also applies current status- and navigation-bar insets so the DVD and Advanced Merger interfaces remain clear of system UI across phones, navigation modes, rotation, and resizable ChromeOS windows.
+**DEMUX** reads the original DVD title through the existing native DVD reader. Only the extracted outputs need temporary space before they are copied to the chosen destination. **MUX** prepares a temporary MKV for each selected DVD source when the operation starts, including a DVD selected only for chapters. Original DVD stream selections are mapped to the staged MKV indexes before merging. Windows/Linux already read DVD sources directly for both operations and need no preparation change.
+
+For MUX, the device needs enough free temporary space for the selected input copies, any staged DVD titles, and the in-progress output. Temporary merger data is cleaned up when the panel is destroyed or an operation completes. The tab container also applies current status- and navigation-bar insets so the DVD and Advanced Merger interfaces remain clear of system UI across phones, navigation modes, rotation, and resizable ChromeOS windows.
 
 ## Example mapping
 
