@@ -45,7 +45,7 @@ class ReleaseTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 verify_assets(local, bad)
 
-    def simulate(self, fail_at=None, stale=False, corrupt=False, latest="v1.5.0"):
+    def simulate(self, fail_at=None, stale=False, corrupt=False):
         root, assets = self.fixture()
         calls = []
 
@@ -54,21 +54,19 @@ class ReleaseTests(unittest.TestCase):
             if args[0] == 'git':
                 reads = sum(c[0] == 'git' for c in calls)
                 return ('newer' if stale and reads > 1 else 'sha') + '\trefs/heads/main'
-            if args[1:3] == ('release', 'view'):
-                return latest
             if fail_at and args[1:3] == ('release', fail_at):
                 raise subprocess.CalledProcessError(1, args)
             if args[1] == 'api':
                 if '--paginate' in args:
                     return json.dumps([[{
                         'id': 123,
-                        'tag_name': 'main-build-3-1',
+                        'tag_name': 'beta-build-3-1',
                         'draft': True,
                         'target_commitish': 'sha',
                     }]])
                 return json.dumps({
                     'id': 123,
-                    'tag_name': 'main-build-3-1',
+                    'tag_name': 'beta-build-3-1',
                     'draft': True,
                     'target_commitish': 'sha',
                     'assets': assets[:-1] if corrupt else assets,
@@ -81,10 +79,6 @@ class ReleaseTests(unittest.TestCase):
             if not (fail_at or corrupt):
                 raise
         return calls
-
-    def test_old_rerun_cannot_downgrade_latest(self):
-        calls = self.simulate(latest='main-build-4-1')
-        self.assertFalse(any(c[1:3] == ('release', 'create') for c in calls))
 
     def test_failed_upload_never_switches_public_release(self):
         calls = self.simulate(fail_at='upload')
@@ -113,11 +107,14 @@ class ReleaseTests(unittest.TestCase):
         calls = self.simulate()
         self.assertEqual(calls[-1][1:3], ('release', 'edit'))
         self.assertIn('--draft=false', calls[-1])
-        self.assertIn('--latest', calls[-1])
+        self.assertIn('--prerelease', calls[-1])
+        self.assertIn('--latest=false', calls[-1])
+        self.assertNotIn('--latest', calls[-1])
         upload = next(c for c in calls if c[1:3] == ('release', 'upload'))
         self.assertTrue(any(c.endswith('/dependency-source.tar.gz') for c in upload))
         create = next(c for c in calls if c[1:3] == ('release', 'create'))
         self.assertIn('--draft', create)
+        self.assertIn('--prerelease', create)
         self.assertIn('--latest=false', create)
 
 

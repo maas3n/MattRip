@@ -1,12 +1,11 @@
-"""Stage a complete immutable main snapshot before switching /releases/latest.
+"""Stage a complete immutable beta snapshot without replacing the stable latest release.
 
-Each attempt uses a new draft. A failed upload leaves the previous public
-release intact. Numbered releases must use --latest=false to preserve this channel.
+Each attempt uses a new draft. A failed upload leaves every previous public
+release intact. Main snapshots are published as prereleases with --latest=false.
 """
 import hashlib
 import json
 import os
-import re
 from pathlib import Path
 import subprocess
 
@@ -57,14 +56,7 @@ def publish(root, repo, sha, run_number, attempt, run=command):
     if not current_main():
         print('A newer main commit exists; leaving current downloads untouched.')
         return
-    # A rerun of an older workflow can share the current main SHA. Do not let
-    # its smaller versionCode replace a newer successfully published build.
-    latest_tag = run('gh', 'release', 'view', '--repo', repo, '--json', 'tagName', '--jq', '.tagName')
-    match = re.fullmatch(r'main-build-(\d+)-(\d+)', latest_tag)
-    if match and int(match[1]) > int(run_number):
-        print('A newer main build is already published; refusing a version downgrade.')
-        return
-    tag = f'main-build-{run_number}-{attempt}'
+    tag = f'beta-build-{run_number}-{attempt}'
     local = {p.name: p for p in root.iterdir() if p.is_file()}
     required = {'MattRip-Windows-All-in-One.exe', 'MattRip-Linux-amd64Standalone',
                 'MattRip-Android.apk', 'SHA256SUMS.txt'}
@@ -73,9 +65,10 @@ def publish(root, repo, sha, run_number, attempt, run=command):
     # A distinct attempt tag avoids mutating either published releases or a
     # previous attempt's partial draft. A duplicate invocation fails closed.
     run('gh', 'release', 'create', tag, '--repo', repo, '--target', sha,
-        '--draft', '--latest=false', '--title', f'MattRip main build {run_number}',
-        '--notes', f'Current development snapshot from main commit {sha}. '
-        'This is the main download channel, not a numbered stable release. '
+        '--draft', '--prerelease', '--latest=false',
+        '--title', f'MattRip Beta build {run_number}',
+        '--notes', f'Beta development snapshot from main commit {sha}. '
+        'This is a prerelease for testing and does not replace the latest stable release. '
         'All platforms, sources, notices and checksums are included.')
     run('gh', 'release', 'upload', tag, *[str(local[name]) for name in sorted(local)],
         '--repo', repo)
@@ -87,8 +80,10 @@ def publish(root, repo, sha, run_number, attempt, run=command):
     if not current_main():
         print(f'Newer main detected; {tag} remains an unpublished draft.')
         return
-    # One API update publishes the already complete set and selects its redirect.
-    run('gh', 'release', 'edit', tag, '--repo', repo, '--draft=false', '--latest')
+    # Publish only after the complete uploaded payload has been verified.
+    # Keep the stable /releases/latest channel untouched.
+    run('gh', 'release', 'edit', tag, '--repo', repo,
+        '--draft=false', '--prerelease', '--latest=false')
 
 
 if __name__ == '__main__':
