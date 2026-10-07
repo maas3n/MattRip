@@ -28,6 +28,28 @@ def verify_assets(local, remote):
             raise RuntimeError('Uploaded asset verification failed: ' + name)
 
 
+def release_by_tag(repo, tag, run=command):
+    # GitHub's /releases/tags/{tag} endpoint can return 404 for a newly-created
+    # draft whose Git tag has not been published yet. Enumerate releases,
+    # resolve the exact draft by tag_name, then verify it through its numeric ID.
+    pages = json.loads(run(
+        'gh', 'api', '--paginate', '--slurp',
+        f'repos/{repo}/releases?per_page=100'))
+    matches = [
+        release
+        for page in pages
+        for release in page
+        if release.get('tag_name') == tag
+    ]
+    if len(matches) != 1:
+        raise RuntimeError(
+            f'Expected exactly one draft release for {tag}, found {len(matches)}')
+    release_id = matches[0].get('id')
+    if not release_id:
+        raise RuntimeError(f'Draft release for {tag} did not expose a release ID')
+    return json.loads(run('gh', 'api', f'repos/{repo}/releases/{release_id}'))
+
+
 def publish(root, repo, sha, run_number, attempt, run=command):
     def current_main():
         return run('git', 'ls-remote', 'origin', 'refs/heads/main').split()[0] == sha
@@ -57,7 +79,7 @@ def publish(root, repo, sha, run_number, attempt, run=command):
         'All platforms, sources, notices and checksums are included.')
     run('gh', 'release', 'upload', tag, *[str(local[name]) for name in sorted(local)],
         '--repo', repo)
-    release = json.loads(run('gh', 'api', f'repos/{repo}/releases/tags/{tag}'))
+    release = release_by_tag(repo, tag, run=run)
     if not release['draft'] or release['target_commitish'] != sha:
         raise RuntimeError('Refusing to change a published or mismatched release')
     verify_assets(local, release['assets'])
