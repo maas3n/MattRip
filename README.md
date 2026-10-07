@@ -15,47 +15,47 @@ Release downloads and checksums are published together on the [MattRip 1.5.0 rel
 
 ## Download the current GitHub builds
 
-These links stay the same while their files follow the current `main` branch. Every successful release-grade `main` build refreshes the rolling **main downloads**, so merges do not require version-specific README URLs.
+These links stay the same while their files follow the current `main` branch. Every successful release-grade `main` build publishes a complete snapshot before switching these download links. Failed builds leave the previous snapshot available, so merges do not require version-specific README URLs.
 
 ### Windows All-in-One
 
-[**Download MattRip for Windows — All-in-One**](https://github.com/maas3n/MattRip/releases/download/main-downloads/MattRip-Windows-All-in-One.exe)
+[**Download MattRip for Windows — All-in-One**](https://github.com/maas3n/MattRip/releases/latest/download/MattRip-Windows-All-in-One.exe)
 
 ### Linux Standalone
 
-[**Download MattRip for Linux — Standalone**](https://github.com/maas3n/MattRip/releases/download/main-downloads/MattRip-Linux-amd64Standalone)
+[**Download MattRip for Linux — Standalone**](https://github.com/maas3n/MattRip/releases/latest/download/MattRip-Linux-amd64Standalone)
 
 `curl`:
 
 ```bash
-curl -L --fail -o MattRip-Linux-amd64Standalone https://github.com/maas3n/MattRip/releases/download/main-downloads/MattRip-Linux-amd64Standalone
+curl -L --fail -o MattRip-Linux-amd64Standalone https://github.com/maas3n/MattRip/releases/latest/download/MattRip-Linux-amd64Standalone
 chmod +x MattRip-Linux-amd64Standalone
 ```
 
 `wget`:
 
 ```bash
-wget -O MattRip-Linux-amd64Standalone https://github.com/maas3n/MattRip/releases/download/main-downloads/MattRip-Linux-amd64Standalone
+wget -O MattRip-Linux-amd64Standalone https://github.com/maas3n/MattRip/releases/latest/download/MattRip-Linux-amd64Standalone
 chmod +x MattRip-Linux-amd64Standalone
 ```
 
 ### Android / ChromeOS APK
 
-[**Download MattRip for Android / ChromeOS**](https://github.com/maas3n/MattRip/releases/download/main-downloads/MattRip-Android.apk)
+[**Download MattRip for Android / ChromeOS**](https://github.com/maas3n/MattRip/releases/latest/download/MattRip-Android.apk)
 
 `curl`:
 
 ```bash
-curl -L --fail -o MattRip-Android.apk https://github.com/maas3n/MattRip/releases/download/main-downloads/MattRip-Android.apk
+curl -L --fail -o MattRip-Android.apk https://github.com/maas3n/MattRip/releases/latest/download/MattRip-Android.apk
 ```
 
 `wget`:
 
 ```bash
-wget -O MattRip-Android.apk https://github.com/maas3n/MattRip/releases/download/main-downloads/MattRip-Android.apk
+wget -O MattRip-Android.apk https://github.com/maas3n/MattRip/releases/latest/download/MattRip-Android.apk
 ```
 
-> The rolling links follow successful release-grade builds of **`main`**. Numbered release assets remain immutable and are published separately.
+> These links follow successful release-grade builds of **`main`**, not the numbered stable channel. GitHub’s “Latest” designation is reserved for these main snapshots. Numbered releases remain available by their version tags. Each main snapshot includes all platform packages, source archives, notices and checksums; published assets and tags are never replaced.
 
 ## What MattRip can do
 

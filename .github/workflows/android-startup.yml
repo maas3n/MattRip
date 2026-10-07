@@ -17,17 +17,20 @@ permissions:
 jobs:
   startup:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         include:
           - api: 26
             target: google_apis
+            page-size: 4096
           - api: 35
             target: google_apis
+            page-size: 4096
           - api: 35
             target: google_apis_ps16k
+            page-size: 16384
     steps:
       - uses: actions/checkout@v4
         with:
@@ -37,7 +40,7 @@ jobs:
           name: ${{ inputs.artifact }}
           path: startup-apk
       - name: Test startup UI recognition
-        run: python3 -m unittest discover -s android/scripts -p test_startup_ui.py -v
+        run: python3 -m unittest discover -s android/scripts -p 'test_startup*.py' -v
       - name: Enable emulator acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -52,7 +55,7 @@ jobs:
           profile: pixel_2
           ram-size: 4096M
           heap-size: 512M
-          script: python3 android/scripts/test-startup.py "$(find startup-apk -name '*.apk' -print -quit)" startup-logs
+          script: python3 android/scripts/startup_runner.py "$(find startup-apk -name '*.apk' -print -quit)" startup-logs --page-size ${{ matrix.page-size }}
       - name: Preserve startup diagnostics
         if: always()
         uses: actions/upload-artifact@v4

@@ -47,8 +47,6 @@ try:
                 raise RuntimeError(f"MattRip exited while looking for tab: {label}")
             tree = screen(f"before-{safe_label}-{attempt}")
             node = find_tab(tree, label)
-            if node is not None:
-                break
             title = foreground_anr_title(tree)
             if title is not None:
                 close = pixel_launcher_anr_close_button(tree)
@@ -57,6 +55,8 @@ try:
                 print("Closing unrelated Pixel Launcher ANR over MattRip", flush=True)
                 x, y = center_of(close)
                 adb("shell", "input", "tap", str(x), str(y))
+            elif node is not None:
+                break
             else:
                 print(f"Waiting for MattRip tab {label} ({attempt + 1}/12)", flush=True)
             time.sleep(2)
@@ -67,7 +67,9 @@ try:
         time.sleep(1)
         if not adb("shell", "pidof", package).strip():
             raise RuntimeError(f"MattRip exited after opening tab: {label}")
-    screen("final")
+    final = screen("final")
+    if foreground_anr_title(final) is not None:
+        raise RuntimeError("Unexpected ANR dialog after tab navigation: " + foreground_anr_title(final))
     print("APK installed, activity stayed alive, and all four tabs opened.")
     if "DemuxSmokeInstrumentation" in adb("shell", "pm", "list", "instrumentation"):
         result = adb("shell", "am", "instrument", "-w", package + "/io.github.maas3n.mattmux.DemuxSmokeInstrumentation")

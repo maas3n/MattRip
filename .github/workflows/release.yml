@@ -13,9 +13,10 @@ on:
         required: false
         type: string
 
+# Serialize channels and never cancel a publisher midway through publication.
 concurrency:
-  group: ${{ github.event_name == 'workflow_dispatch' && inputs.tag != '' && format('unified-release-{0}', inputs.tag) || github.ref == 'refs/heads/main' && 'main-downloads' || format('unified-release-{0}', github.ref) }}
-  cancel-in-progress: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && inputs.tag == '') }}
+  group: unified-release
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -61,7 +62,6 @@ jobs:
             source_ref="$GITHUB_SHA"
             version="0.0.0-dev.${GITHUB_RUN_NUMBER}"
             prerelease=true
-            android_version_code=$((100000 + GITHUB_RUN_NUMBER))
             windows_numeric_version="0.0.0.0"
           else
             mode=release
@@ -81,12 +81,11 @@ jobs:
             sequence="${BASH_REMATCH[6]:-}"
 
             (( major <= 200 && minor <= 99 && patch <= 99 )) || {
-              echo "Version components are too large for the Android versionCode scheme." >&2
+              echo "Version components exceed the supported release bounds." >&2
               exit 1
             }
 
             prerelease=false
-            stage=999
             if [[ -n "$channel" ]]; then
               sequence=$((10#$sequence))
               (( sequence >= 1 && sequence <= 99 )) || {
@@ -94,18 +93,14 @@ jobs:
                 exit 1
               }
               prerelease=true
-              case "$channel" in
-                alpha) stage=$((sequence)) ;;
-                beta)  stage=$((200 + sequence)) ;;
-                rc)    stage=$((500 + sequence)) ;;
-              esac
             fi
 
             version="${tag#v}"
-            android_version_code=$((major * 10000000 + minor * 100000 + patch * 1000 + stage))
             windows_numeric_version="${major}.${minor}.${patch}.0"
             git rev-parse --verify "refs/tags/${tag}^{commit}" >/dev/null
           fi
+
+          android_version_code="$(python3 scripts/release_version.py)"
 
           {
             echo "mode=$mode"
@@ -116,8 +111,25 @@ jobs:
             echo "android_version_code=$android_version_code"
             echo "windows_numeric_version=$windows_numeric_version"
           } >> "$GITHUB_OUTPUT"
-  windows:
+  signing-preflight:
     needs: metadata
+    runs-on: ubuntu-latest
+    environment: android-release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.metadata.outputs.source_ref }}
+      - name: Check app-signing configuration before building any platform
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_APP_SIGNING_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_APP_SIGNING_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_APP_SIGNING_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_APP_SIGNING_KEY_PASSWORD }}
+          CERT_SHA256: ${{ vars.ANDROID_APP_SIGNING_CERT_SHA256 }}
+        run: python3 scripts/check_signing_environment.py
+
+  windows:
+    needs: [metadata, signing-preflight]
     runs-on: windows-latest
     steps:
       - name: Check out tagged source
@@ -364,7 +376,7 @@ jobs:
             dist/SHA256SUMS-Windows.txt
 
   linux:
-    needs: metadata
+    needs: [metadata, signing-preflight]
     runs-on: ubuntu-24.04
     steps:
       - name: Check out tagged source
@@ -448,7 +460,7 @@ jobs:
             dist/linux-release/SHA256SUMS-Linux.txt
 
   android:
-    needs: metadata
+    needs: [metadata, signing-preflight]
     runs-on: ubuntu-latest
     environment: android-release
     steps:
@@ -665,65 +677,29 @@ jobs:
             --target "$(git rev-parse HEAD)"
             --title "MattRip $version"
             --generate-notes
+            --latest=false
           )
           if [[ "$prerelease" == "true" ]]; then
             args+=(--prerelease)
           fi
           gh "${args[@]}"
 
-      - name: Prepare rolling main download aliases
+      - name: Add stable filenames to the complete main snapshot
         if: ${{ needs.metadata.outputs.mode == 'main' }}
         run: |
           set -euo pipefail
           version='${{ needs.metadata.outputs.version }}'
-          mkdir -p rolling-assets
-          cp "release-assets/MattRip-$version-Windows-All-in-One.exe" rolling-assets/MattRip-Windows-All-in-One.exe
-          cp "release-assets/MattRip-$version-Linux-amd64Standalone" rolling-assets/MattRip-Linux-amd64Standalone
-          cp "release-assets/MattRip-$version-Android.apk" rolling-assets/MattRip-Android.apk
-          test -s rolling-assets/MattRip-Windows-All-in-One.exe
-          test -s rolling-assets/MattRip-Linux-amd64Standalone
-          test -s rolling-assets/MattRip-Android.apk
+          cp "release-assets/MattRip-$version-Windows-All-in-One.exe" release-assets/MattRip-Windows-All-in-One.exe
+          cp "release-assets/MattRip-$version-Linux-amd64Standalone" release-assets/MattRip-Linux-amd64Standalone
+          cp "release-assets/MattRip-$version-Android.apk" release-assets/MattRip-Android.apk
+          (
+            cd release-assets
+            find . -maxdepth 1 -type f ! -name 'SHA256SUMS.txt' -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+            sha256sum -c SHA256SUMS.txt
+          )
 
-      - name: Refresh rolling downloads from current main
+      - name: Publish complete main snapshot and switch downloads
         if: ${{ needs.metadata.outputs.mode == 'main' }}
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          rolling_tag='main-downloads'
-
-          latest_main="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
-          if [[ "$latest_main" != "$GITHUB_SHA" ]]; then
-            echo "A newer main commit exists ($latest_main); refusing to publish stale rolling assets from $GITHUB_SHA."
-            exit 0
-          fi
-
-          if ! gh release view "$rolling_tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release create "$rolling_tag" \
-              --repo "$GITHUB_REPOSITORY" \
-              --target "$GITHUB_SHA" \
-              --title "MattRip main downloads" \
-              --notes "Rolling release-grade downloads built from the current main branch. Numbered releases remain immutable." \
-              --prerelease
-          fi
-
-          # --clobber makes this step idempotent. A failed upload can be rerun
-          # independently of numbered release publication.
-          gh release upload "$rolling_tag" \
-            rolling-assets/MattRip-Windows-All-in-One.exe \
-            rolling-assets/MattRip-Linux-amd64Standalone \
-            rolling-assets/MattRip-Android.apk \
-            --repo "$GITHUB_REPOSITORY" \
-            --clobber
-
-          # Move the rolling tag only after every asset upload succeeds. This
-          # makes the tag itself identify the source commit of the complete set.
-          gh api --method PATCH \
-            "repos/$GITHUB_REPOSITORY/git/refs/tags/$rolling_tag" \
-            -f sha="$GITHUB_SHA" \
-            -F force=true >/dev/null
-
-          gh release edit "$rolling_tag" \
-            --repo "$GITHUB_REPOSITORY" \
-            --title "MattRip main downloads" \
-            --notes "Rolling release-grade downloads built from main commit $GITHUB_SHA. Numbered releases remain immutable."
+        run: python3 scripts/publish_main.py
