@@ -48,6 +48,7 @@ class ReleaseTests(unittest.TestCase):
     def simulate(self, fail_at=None, stale=False, corrupt=False, latest="v1.5.0"):
         root, assets = self.fixture()
         calls = []
+
         def run(*args):
             calls.append(args)
             if args[0] == 'git':
@@ -58,9 +59,22 @@ class ReleaseTests(unittest.TestCase):
             if fail_at and args[1:3] == ('release', fail_at):
                 raise subprocess.CalledProcessError(1, args)
             if args[1] == 'api':
-                return json.dumps({'draft': True, 'target_commitish': 'sha',
-                                   'assets': assets[:-1] if corrupt else assets})
+                if '--paginate' in args:
+                    return json.dumps([[{
+                        'id': 123,
+                        'tag_name': 'main-build-3-1',
+                        'draft': True,
+                        'target_commitish': 'sha',
+                    }]])
+                return json.dumps({
+                    'id': 123,
+                    'tag_name': 'main-build-3-1',
+                    'draft': True,
+                    'target_commitish': 'sha',
+                    'assets': assets[:-1] if corrupt else assets,
+                })
             return ''
+
         try:
             publish(root, 'owner/repo', 'sha', '3', '1', run=run)
         except (subprocess.CalledProcessError, RuntimeError):
@@ -84,6 +98,16 @@ class ReleaseTests(unittest.TestCase):
     def test_new_main_during_upload_leaves_private_draft(self):
         calls = self.simulate(stale=True)
         self.assertFalse(any(c[1:3] == ('release', 'edit') for c in calls))
+
+    def test_draft_verification_resolves_release_id_not_tag_endpoint(self):
+        calls = self.simulate()
+        api_calls = [c for c in calls if len(c) > 1 and c[1] == 'api']
+        self.assertTrue(any('--paginate' in c and '--slurp' in c for c in api_calls))
+        self.assertTrue(any('repos/owner/repo/releases/123' in c for c in api_calls))
+        self.assertFalse(any(
+            any('/releases/tags/' in arg for arg in c)
+            for c in api_calls
+        ))
 
     def test_complete_payload_publishes_once_after_verification(self):
         calls = self.simulate()
